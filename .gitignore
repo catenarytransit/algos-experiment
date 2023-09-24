@@ -1,0 +1,6 @@
+credentials.json
+tokens.json
+target/
+*.log
+html/courses/*
+graph.json
