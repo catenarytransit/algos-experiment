@@ -7,6 +7,14 @@ edition = "2021"
 
 [dependencies]
 csv = "*"
+serde = "*"
+serde_json = "*"
+pathfinding = "*"
+
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
+
+[[bin]]
+name = "test"
+path = "src/test.rs"
