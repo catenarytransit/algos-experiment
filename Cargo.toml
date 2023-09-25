@@ -10,6 +10,7 @@ csv = "*"
 serde = "*"
 serde_json = "*"
 pathfinding = "*"
+gtfs-structures = "*"
 
 [[bin]]
 name = "algo"
@@ -18,3 +19,7 @@ path = "src/algo.rs"
 [[bin]]
 name = "test"
 path = "src/test.rs"
+
+[[bin]]
+name = "gtfs"
+path = "src/gtfs.rs"
