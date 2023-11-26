@@ -1,34 +1,23 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+use pathfinding::prelude::dijkstra;
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct Pos(i32, i32);
+
+impl Pos {
+  fn successors(&self) -> Vec<(Pos, usize)> {
+    let &Pos(x, y) = self;
+    vec![Pos(x+1,y+2), Pos(x+1,y-2), Pos(x-1,y+2), Pos(x-1,y-2),
+         Pos(x+2,y+1), Pos(x+2,y-1), Pos(x-2,y+1), Pos(x-2,y-1)]
+         .into_iter().map(|p| (p, 1)).collect()
+  }
+}
 
 fn main() {
-    let mut graph = HashMap::new();
-
-    let mut links = HashMap::new();
-    links.insert("b", 10);
-    links.insert("c", 10);
-    
-    graph.insert("a", links);
-
-    let mut links = HashMap::new();
-    links.insert("a", 10);
-    links.insert("c", 10);
-    
-    graph.insert("b", links);
-
-    let mut links = HashMap::new();
-    links.insert("b", 10);
-    links.insert("a", 10);
-
-    graph.insert("c", links);
-
-    let serialized = serde_json::to_string(&graph).expect("Serialization failed");
-    
-    let mut file = File::create("graph.json").expect("File creation failed");
-    file.write_all(serialized.as_bytes()).expect("Write failed");
-
-    for (key, value) in &graph {
-        println!("{}: {:?}", key, value);
-    }
+    let result = dijkstra(&Pos(1, 1), |p| p.successors(), |p| *p == GOAL);
+    static GOAL: Pos = Pos(4, 6);
+    assert_eq!(result.clone().expect("no path found").1, 4);
+    println!("{:?}", result);
 }

@@ -10,11 +10,18 @@ csv = "*"
 serde = "*"
 serde_json = "*"
 pathfinding = "*"
-gtfs-structures = "*"
+petgraph = "*"
+gtfs-structures = "0.37.0"
+gtfs-rt = "*"
+osmgraphing = "1.1.1"
 
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
+
+[[bin]]
+name = "csv"
+path = "src/csv.rs"
 
 [[bin]]
 name = "test"

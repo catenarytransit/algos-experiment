@@ -1,0 +1,167 @@
+struct FeedEntity {
+    id: String,
+    is_deleted: None,
+    trip_update: Option<{
+        trip: {
+            trip_id: None,
+            route_id: None,
+            direction_id: None,
+            start_time: None,
+            start_date: None,
+            schedule_relationship: None,
+        },
+        vehicle: Option<{
+            id: None,
+            label: None,
+            license_plate: None,
+            wheelchair_accessible: None,
+        }>,
+        stop_time_update: Vec<
+            stop_sequence: None,
+            stop_id: None,
+            arrival: Option<
+                delay: None,
+                time: None,
+                uncertainty: None,
+            >,
+            departure: Option<
+                delay: None,
+                time: None,
+                uncertainty: None,
+            >,
+            departure_occupancy_status: None,
+            schedule_relationship: None,
+            stop_time_properties: Option<
+                assigned_stop_id: None,
+            >,
+        >,
+        timestamp: None,
+        delay: None,
+        trip_properties: Option<
+            trip_id: None,
+            start_date: None,
+            start_time: None,
+            shape_id: None,
+        >,
+    }>,
+    vehicle: Option<
+        trip: Option<
+            trip_id: None,
+            route_id: None,
+            direction_id: None,
+            start_time: None,
+            start_date: None,
+            schedule_relationship: None,
+        >,
+        vehicle: Option<
+            id: None,
+            label: None,
+            license_plate: None,
+            wheelchair_accessible: None,
+        >,
+        position: Option<
+            latitude: f32,
+            longitude: f32,
+            bearing: None,
+            odometer: None,
+            speed: None,
+        >,
+        current_stop_sequence: None,
+        stop_id: None,
+        current_status: None,
+        timestamp: None,
+        congestion_level: None,
+        occupancy_status: None,
+        occupancy_percentage: None,
+        multi_carriage_details: Vec<
+            id: None,
+            label: None,
+            occupancy_status: None,
+            occupancy_percentage: None,
+            carriage_sequence: None,
+        >,
+    >,
+    alert: Option<
+        active_period: Vec<
+            start: None,
+            end: None,
+        >,
+        informed_entity: Vec<
+            agency_id: None,
+            route_id: None,
+            route_type: None,
+            trip: Option<
+                pub trip_id: None,
+                pub route_id: None,
+                pub direction_id: None,
+                pub start_time: None,
+                pub start_date: None,
+                pub schedule_relationship: None,
+            >,
+            stop_id: None,
+            direction_id: None,
+        >,
+        cause: None,
+        effect: None,
+        url: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        header_text: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        description_text: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        tts_header_text: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        tts_description_text: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        severity_level: None,
+        image: Option<
+            localized_image: Vec<
+                url: String,
+                media_type: String,
+                language: None,
+            >,
+        >,
+        image_alternative_text: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        cause_detail: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+        effect_detail: Option<
+            translation: Vec<
+                text: String,
+                language: None,
+            >,
+        >,
+    >,
+    shape: Option<
+        shape_id: None,
+        encoded_polyline: None,
+    >,
+}
