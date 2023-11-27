@@ -22,6 +22,10 @@ impl Graph {
         self.nodes.insert(node.to_string(), connections);
     }
 
+    fn add_edge(&mut self, source: String, target: String, weight: f64) {
+        self.nodes.get_mut(&source).unwrap().insert(target, weight);
+    }
+
     fn dijkstra(&self, start_node: &str, target_node: &str) -> Option<(f64, Vec<String>)> {
         let mut dists: HashMap<String, f64> = self.nodes.keys().map(|node| (node.clone(), MAX)).collect();
         let mut path: HashMap<String, String> = HashMap::new();
@@ -90,12 +94,12 @@ fn main() {
     for result in rdr.records() {
         // Extract the record
         let record = result.unwrap();
-        let id: String = record[0].to_string();
+        //let id: String = record[0].to_string();
         let source: String = record[2].to_string();
         let target: String = record[3].to_string();
         let length: f64 = record[4].parse().unwrap();
         if graph.nodes.contains_key(&source) {
-            graph.nodes.get_mut(&source).unwrap().insert(target, length);
+            graph.add_edge(source, target, length);
             continue;
         }
         let mut node = HashMap::new();
@@ -103,8 +107,8 @@ fn main() {
         graph.add_node(source.as_str(), node);
     }
 
-    println!("{:#?}", graph);
-    if let Some((distance, path)) = graph.dijkstra("2729443585", "2729456815") {
+    //println!("{:#?}", graph);
+    if let Some((distance, path)) = graph.dijkstra("297523835", "364042999") {
         println!("Shortest Distance: {}", distance);
         println!("Shortest Path: {:?}", path);
     } else {

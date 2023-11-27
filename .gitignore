@@ -4,3 +4,6 @@ target/
 *.log
 html/courses/*
 graph.json
+socal-latest.osm.pbf
+edges.csv
+nodes.csv
