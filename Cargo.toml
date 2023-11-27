@@ -28,5 +28,9 @@ name = "test"
 path = "src/test.rs"
 
 [[bin]]
+name = "test2"
+path = "src/test2.rs"
+
+[[bin]]
 name = "gtfs"
 path = "src/gtfs.rs"

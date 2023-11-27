@@ -1,14 +1,11 @@
-use std::cmp::Ordering;
 use std::collections::{HashMap, BinaryHeap};
-use std::fs::File;
+use std::cmp::Ordering;
 
-use csv::ReaderBuilder;
-
-const MAX: f64 = f64::MAX;
+const MAX: i32 = i32::MAX;
 
 #[derive(Debug, Clone)]
 struct Graph {
-    nodes: HashMap<String, HashMap<String, f64>>,
+    nodes: HashMap<String, HashMap<String, i32>>,
 }
 
 impl Graph {
@@ -18,17 +15,17 @@ impl Graph {
         }
     }
 
-    fn add_node(&mut self, node: &str, connections: HashMap<String, f64>) {
+    fn add_node(&mut self, node: &str, connections: HashMap<String, i32>) {
         self.nodes.insert(node.to_string(), connections);
     }
 
-    fn dijkstra(&self, start_node: &str, target_node: &str) -> Option<(f64, Vec<String>)> {
-        let mut dists: HashMap<String, f64> = self.nodes.keys().map(|node| (node.clone(), MAX)).collect();
+    fn dijkstra(&self, start_node: &str, target_node: &str) -> Option<(i32, Vec<String>)> {
+        let mut dists: HashMap<String, i32> = self.nodes.keys().map(|node| (node.clone(), MAX)).collect();
         let mut path: HashMap<String, String> = HashMap::new();
         let mut min_heap = BinaryHeap::new();
 
-        dists.insert(start_node.to_string(), 0.0);
-        min_heap.push(DijkstraNode { node: start_node.to_string(), dist: 0.0 });
+        dists.insert(start_node.to_string(), 0);
+        min_heap.push(DijkstraNode { node: start_node.to_string(), dist: 0 });
 
         while let Some(DijkstraNode { node, dist }) = min_heap.pop() {
             if &node == target_node {
@@ -64,47 +61,41 @@ impl Graph {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Eq, PartialEq)]
 struct DijkstraNode {
     node: String,
-    dist: f64,
+    dist: i32,
 }
-
-impl Eq for DijkstraNode {}
 
 impl Ord for DijkstraNode {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.dist.partial_cmp(&other.dist).unwrap_or(Ordering::Equal)
+        other.dist.cmp(&self.dist)
+    }
+}
+
+impl PartialOrd for DijkstraNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
 fn main() {
     let mut graph = Graph::new();
-    let file = File::open("edges.csv").unwrap();
+    let mut node_a = HashMap::new();
+    node_a.insert("b".to_string(), 9);
+    node_a.insert("c".to_string(), 25);
+    let mut node_b = HashMap::new();
+    node_b.insert("a".to_string(), 10);
+    node_b.insert("c".to_string(), 10);
+    let mut node_c = HashMap::new();
+    node_c.insert("a".to_string(), 9);
+    node_c.insert("b".to_string(), 10);
 
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(file);
+    graph.add_node("a", node_a);
+    graph.add_node("b", node_b);
+    graph.add_node("c", node_c);
 
-    // Iterate over the CSV records
-    for result in rdr.records() {
-        // Extract the record
-        let record = result.unwrap();
-        let id: String = record[0].to_string();
-        let source: String = record[2].to_string();
-        let target: String = record[3].to_string();
-        let length: f64 = record[4].parse().unwrap();
-        if graph.nodes.contains_key(&source) {
-            graph.nodes.get_mut(&source).unwrap().insert(target, length);
-            continue;
-        }
-        let mut node = HashMap::new();
-        node.insert(target, length);
-        graph.add_node(source.as_str(), node);
-    }
-
-    println!("{:#?}", graph);
-    if let Some((distance, path)) = graph.dijkstra("2729443585", "2729456815") {
+    if let Some((distance, path)) = graph.dijkstra("a", "c") {
         println!("Shortest Distance: {}", distance);
         println!("Shortest Path: {:?}", path);
     } else {
