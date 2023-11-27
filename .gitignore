@@ -4,5 +4,3 @@ target/
 *.log
 html/courses/*
 graph.json
-edges.csv
-nodes.csv
