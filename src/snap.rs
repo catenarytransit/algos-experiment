@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use gtfs_structures;
+#[derive(Debug)]
 struct GTFSGraph {
     route_names: HashMap<String, String>,
     stop_names: HashMap<String, String>,
@@ -49,5 +50,5 @@ fn main() {
             graph.add_stoptime(trip.1.id.clone(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
         }
     }
-    println!("{#?}", graph)
+    println!("{:#?}", graph)
 }
