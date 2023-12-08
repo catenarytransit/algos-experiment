@@ -11,7 +11,7 @@ serde = "*"
 serde_json = "*"
 pathfinding = "*"
 petgraph = "*"
-gtfs-structures = "0.37.0"
+gtfs-structures = "0.38.0"
 gtfs-rt = "*"
 osmgraphing = "1.1.1"
 
@@ -34,3 +34,7 @@ path = "src/test2.rs"
 [[bin]]
 name = "gtfs"
 path = "src/gtfs.rs"
+
+[[bin]]
+name = "snap"
+path = "src/snap.rs"
