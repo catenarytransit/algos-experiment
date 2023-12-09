@@ -6,6 +6,7 @@ struct GTFSGraph {
     stop_names: HashMap<String, String>,
     routes: HashMap<String, HashMap<String, Vec<u32>>>,
 }
+
 impl GTFSGraph {
     fn new() -> Self {
         Self {
@@ -14,24 +15,36 @@ impl GTFSGraph {
             stop_names: HashMap::new(),
         }
     }
+    //adding connected edges
     fn add_route(&mut self, id: String, name: String) {
-        let stops: HashMap<String, Vec<u32>> = HashMap::new();
+        let stops = HashMap::new();
         self.routes.insert(id.clone(), stops);
         self.route_names.insert(id, name);
     }
     fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
+
     fn add_stoptime(&mut self, id: String, stop_id: String, arrival_time: u32) {
-        if let Some(route_stops) = self.routes.get_mut(&id) {
-            if let Some(stop_times) = route_stops.get_mut(&stop_id) {
+        if !self.routes.contains_key(&id) {
+            self.add_route(id.clone(), "Kyler's Transit Line".to_string());
+        }
+        if let Some(stop_times) = self.routes.get_mut(&id).unwrap().get_mut(&stop_id) {
+            if !stop_times.contains(&arrival_time) {
                 stop_times.push(arrival_time);
-            } else {
-                let new_stop_times = vec![arrival_time];
-                route_stops.insert(stop_id, new_stop_times);
             }
+        } else {
+            let new_stop_times = vec![arrival_time];
+            self.routes.get_mut(&id).unwrap().insert(stop_id, new_stop_times);
         }
     }
+    fn sort_stoptimes(&mut self) {
+        for route in &mut self.routes {
+            for stop in route.1 {
+                stop.1.sort();
+            }
+        }
+    }    
 }
 
 
@@ -47,8 +60,9 @@ fn main() {
             if !graph.stop_names.contains_key(&stop_times.stop.id) {
                 graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
             }
-            graph.add_stoptime(trip.1.id.clone(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
+            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
         }
     }
+    graph.sort_stoptimes();
     println!("{:#?}", graph)
 }
