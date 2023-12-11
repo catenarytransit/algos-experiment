@@ -15,7 +15,8 @@ petgraph = "*"
 gtfs-structures = "0.38.0"
 gtfs-rt = "*"
 osmgraphing = "1.1.1"
-
+tokio = { version = "*", features = ["full"] }
+tokio-postgres = "*"
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
