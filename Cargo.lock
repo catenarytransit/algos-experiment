@@ -41,6 +41,7 @@ dependencies = [
 name = "algo"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "csv",
  "gtfs-rt",
  "gtfs-structures",

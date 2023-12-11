@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use chrono::prelude::*;
 use gtfs_structures;
 #[derive(Debug)]
 struct GTFSGraph {
     route_names: HashMap<String, String>,
     stop_names: HashMap<String, String>,
-    routes: HashMap<String, HashMap<String, Vec<u32>>>,
+    //<route id, <stop id, <service id, Vec<stop times>>>>
+    routes: HashMap<String, HashMap<String, HashMap<String, Vec<String>>>>,
 }
 
 impl GTFSGraph {
@@ -24,24 +26,35 @@ impl GTFSGraph {
     fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
-
-    fn add_stoptime(&mut self, id: String, stop_id: String, arrival_time: u32) {
+    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32) {//, start_date: &String, end_date: &String) {
         if !self.routes.contains_key(&id) {
             self.add_route(id.clone(), "Kyler's Transit Line".to_string());
         }
-        if let Some(stop_times) = self.routes.get_mut(&id).unwrap().get_mut(&stop_id) {
-            if !stop_times.contains(&arrival_time) {
-                stop_times.push(arrival_time);
-            }
+        let mut arrival_string = (arrival_time/3600).to_string();
+        if arrival_string.len() == 1 {
+            arrival_string.insert_str(0, "0");
+        }
+        if ((arrival_time % 3600)/60).to_string().as_str().len() == 1 {
+            arrival_string.push_str(format!(":0{}", ((arrival_time % 3600)/60).to_string()).as_str());
         } else {
-            let new_stop_times = vec![arrival_time];
-            self.routes.get_mut(&id).unwrap().insert(stop_id, new_stop_times);
+            arrival_string.push_str(format!(":{}", ((arrival_time % 3600)/60).to_string()).as_str());
+        }
+        if !self.routes.get_mut(&id).unwrap().contains_key(&stop_id) {
+            self.routes.get_mut(&id).unwrap().insert(stop_id.clone(), HashMap::new());
+        }
+        if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&service_id) {
+            let new_stop_times = vec![arrival_string];
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(service_id, new_stop_times);
+        } else {
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&service_id).unwrap().push(arrival_string);
         }
     }
     fn sort_stoptimes(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
-                stop.1.sort();
+                for service in stop.1 {
+                    service.1.sort();
+                }
             }
         }
     }    
@@ -60,7 +73,7 @@ fn main() {
             if !graph.stop_names.contains_key(&stop_times.stop.id) {
                 graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
             }
-            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
+            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap());
         }
     }
     graph.sort_stoptimes();
