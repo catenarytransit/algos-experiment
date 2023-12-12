@@ -32,8 +32,9 @@ impl GTFSGraph {
                 for (service, times) in services {
                     let json_value = serde_json::to_string(&times);
                     // Prepare the SQL statement with parameterized query
-                    let statement = "INSERT INTO timetable(id, time) VALUES ($1, $2) RETURNING *";
-                    let rows = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, &route, &stop, &service), &json_value.unwrap()]).await;
+                    //let service: String = &service[0..service.len() - 2];
+                    let statement = "INSERT INTO timetable(id, time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+                    let rows = client.query_one(statement, &[&self.onestop_id, &route, &stop, &service[0..service.len() - 2].to_string(),  &service[service.len() - 1..].to_string(), &json_value.unwrap()]).await;
                 }
             }
         }
@@ -137,6 +138,11 @@ async fn main() {
     let x = client.execute(
         "CREATE TABLE IF NOT EXISTS timetable (
             id VARCHAR PRIMARY KEY,
+            time VARCHAR
+            route VARCHAR
+            stop VARCHAR
+            service VARCHAR
+            direction VARCHAR
             time VARCHAR
         );",
         &[],

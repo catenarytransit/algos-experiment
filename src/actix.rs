@@ -8,7 +8,11 @@ mod models {
     #[derive(Deserialize, PostgresMapper, Serialize, Debug, Clone)]
     #[pg_mapper(table = "timetable")]
     pub struct TimeTable {
+        pub direction: String,
         pub id: String,
+        pub route: String,
+        pub stop: String,
+        pub service: String,
         pub time: String,
     }
 }
@@ -48,8 +52,8 @@ mod db {
 
     use crate::{errors::MyError, models::TimeTable};
 
-    pub async fn index(client: &Client, id: String) -> Result<Vec<TimeTable>, MyError> {
-        let stmt = "SELECT * FROM timetable WHERE id LIKE $1";
+    pub async fn index(client: &Client, id: String, route: String, stop: String, service: String, direction: String) -> Result<Vec<TimeTable>, MyError> {
+        let stmt = "SELECT * FROM timetable WHERE id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5";
 
         let results = client
             .query(stmt, &[&id])
@@ -72,32 +76,29 @@ mod handlers {
     pub async fn index(db_pool: web::Data<Pool>, req: HttpRequest) -> Result<HttpResponse, Error> {
         let qs = QString::from(req.query_string());
         println!("{:?}", qs);
-        let mut formatted_args = String::new();
-        match qs.get("onestop_id") {
-            Some(id) => formatted_args.push_str(id),
-            None => formatted_args.push_str("%"),
+        let id = match qs.get("onestop_id") {
+            Some(id) => id.to_string(),
+            None => "%".to_string(),
         };
-        match qs.get("route") {
-            Some(route) => formatted_args.push_str(format!("-{}", route).as_str()),
-            None => formatted_args.push_str("%"),
+        let route = match qs.get("route") {
+            Some(route) => route.to_string(),
+            None => "%".to_string(),
         };
-        match qs.get("stop") {
-            Some(stop) => formatted_args.push_str(format!("-{}", stop).as_str()),
-            None => formatted_args.push_str("%"),
+        let stop = match qs.get("stop") {
+            Some(stop) => stop.to_string(),
+            None => "%".to_string(),
         };
-        match qs.get("service") {
-            Some(service) => formatted_args.push_str(format!("-{}", service).as_str()),
-            None => formatted_args.push_str("%"),
+        let service = match qs.get("service") {
+            Some(service) => service.to_string(),
+            None => "%".to_string(),
         };
-        match qs.get("direction") {
-            Some(direction) => formatted_args.push_str(format!("-{}", direction).as_str()),
-            None => formatted_args.push_str("%"),
+        let direction = match qs.get("direction") {
+            Some(direction) => direction.to_string(),
+            None => "%".to_string(),
         };
         let re = Regex::new("%+").unwrap();
-        let formatted_args = re.replace_all(formatted_args.as_str(), "%").to_string();
-        println!("{}", formatted_args);
         let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
-        let timetable = db::index(&client, formatted_args).await?;
+        let timetable = db::index(&client, id, route, stop, service, direction).await?;
         //println!("{:#?}", timetable.clone());
         let last = timetable.last().unwrap().time.clone();
         let last_string = last.to_string();
