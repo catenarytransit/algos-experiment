@@ -9,6 +9,7 @@ edition = "2021"
 actix-web = "*"
 chrono = "0.4.31"
 csv = "*"
+derive_more = "0.99.17"
 diesel = "*"
 deadpool-postgres = "*"
 serde = "*"
@@ -22,6 +23,9 @@ actix-postgres = "*"
 qstring = "0.7"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
+tokio-pg-mapper = "*"
+tokio-pg-mapper-derive = "*"
+
 [[bin]]
 name = "actix"
 path = "src/actix.rs"
