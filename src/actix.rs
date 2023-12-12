@@ -53,7 +53,7 @@ mod db {
     use crate::{errors::MyError, models::TimeTable};
 
     pub async fn index(client: &Client, id: String, route: String, stop: String, service: String, direction: String) -> Result<Vec<TimeTable>, MyError> {
-        let stmt = "SELECT * FROM timetable WHERE id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5";
+        let stmt = "SELECT * FROM timetable WHERE onestop_id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5";
 
         let results = client
             .query(stmt, &[&id, &route, &stop, &service, &direction])
