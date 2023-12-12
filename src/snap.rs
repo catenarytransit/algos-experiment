@@ -143,7 +143,6 @@ async fn main() {
             stop VARCHAR,
             service VARCHAR,
             direction VARCHAR,
-            time VARCHAR,
         );",
         &[],
     ).await;
