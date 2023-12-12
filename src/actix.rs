@@ -47,16 +47,17 @@ mod errors {
 }
 
 mod db {
+    use actix_web::rt::time;
     use deadpool_postgres::Client;
     use tokio_pg_mapper::FromTokioPostgresRow;
 
     use crate::{errors::MyError, models::TimeTable};
 
-    pub async fn index(client: &Client, id: String, route: String, stop: String, service: String, direction: String) -> Result<Vec<TimeTable>, MyError> {
-        let stmt = "SELECT * FROM timetable WHERE onestop_id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5";
+    pub async fn index(client: &Client, id: String, route: String, stop: String, service: String, direction: String, trip: String) -> Result<Vec<TimeTable>, MyError> {
+        let stmt = "SELECT * FROM timetable WHERE onestop_id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5 AND trip_id LIKE $6";
 
         let results = client
-            .query(stmt, &[&id, &route, &stop, &service, &direction])
+            .query(stmt, &[&id, &route, &stop, &service, &direction, &trip])
             .await?
             .iter()
             .map(|row| TimeTable::from_row_ref(row).unwrap())
@@ -95,8 +96,12 @@ mod handlers {
             Some(direction) => direction.to_string(),
             None => "%".to_string(),
         };
+        let trip = match qs.get("trip") {
+            Some(trip) => trip.to_string(),
+            None => "%".to_string(),
+        };
         let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
-        let timetable = db::index(&client, id, route, stop, service, direction).await?;
+        let timetable = db::index(&client, id, route, stop, service, direction, trip).await?;
         //println!("{:#?}", timetable.clone());
         Ok(HttpResponse::Ok().json(timetable))
     }
