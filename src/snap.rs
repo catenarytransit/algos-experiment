@@ -142,7 +142,7 @@ async fn main() {
             route VARCHAR,
             stop VARCHAR,
             service VARCHAR,
-            direction VARCHAR,
+            direction VARCHAR
         );",
         &[],
     ).await;
