@@ -11,7 +11,7 @@ struct GTFSGraph {
     route_names: HashMap<String, String>,
     stop_names: HashMap<String, String>,
     //<route id, <stop id, <service id, Vec<stop times>>>>
-    routes: HashMap<String, HashMap<String, HashMap<String, Vec<String>>>>,
+    routes: HashMap<String, HashMap<String, HashMap<String, Vec<Vec<String>>>>>,
 }
 
 impl GTFSGraph {
@@ -30,12 +30,13 @@ impl GTFSGraph {
             for (stop, services) in stops {
                 // Iterate over the innermost HashMap
                 for (service, times) in services {
-                    let json_value = serde_json::to_string(&times);
+                    let timetable = serde_json::to_string(&times.last().unwrap());
+                    let trips = serde_json::to_string(&times.first().unwrap());
                     // Prepare the SQL statement with parameterized query
                     let service_id: String = service[0..service.len() - 2].to_string();
                     let direction: String = service[service.len() - 1..].to_string();
-                    let statement = "INSERT INTO timetable(id, onestop_id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
-                    let _ = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, route, stop, service), &self.onestop_id, &route, &stop, &service_id,  &direction, &json_value.unwrap()]).await;
+                    let statement = "INSERT INTO timetable(id, onestop_id, route, stop, service, direction, trip_id, time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *";
+                    let _ = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, route, stop, service), &self.onestop_id, &route, &stop, &service_id,  &direction, &trips.unwrap(), &timetable.unwrap()]).await;
                     //println!("{:#?}", rows)
                 }
             }
@@ -56,7 +57,7 @@ impl GTFSGraph {
     fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
-    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType) {//, start_date: &String, end_date: &String) {
+    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
         if self.old_services.contains(&service_id) {
             return;
         }
@@ -82,10 +83,11 @@ impl GTFSGraph {
             direction = 1.to_string();
         }
         if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&format!("{}-{}", service_id, direction)) {
-            let new_stop_times = vec![arrival_string];
+            let new_stop_times = vec![vec![trip_id], vec![arrival_string]];
             self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(format!("{}-{}", service_id, direction), new_stop_times);
         } else {
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap().push(arrival_string);
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[0].push(trip_id);
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[1].push(arrival_string);
         }
     }
     fn clean(&mut self) {
@@ -127,7 +129,7 @@ async fn main() {
             if !graph.stop_names.contains_key(&stop_times.stop.id) {
                 graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
             }
-            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound));
+            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound), trip.1.id.clone());
         }
     }
     graph.clean();
@@ -145,6 +147,7 @@ async fn main() {
             stop VARCHAR,
             service VARCHAR,
             direction VARCHAR,
+            trip_id VARCHAR,
             time VARCHAR
         );",
         &[],
