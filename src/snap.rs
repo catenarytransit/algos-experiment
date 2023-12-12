@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use chrono::prelude::*;
-use gtfs_structures;
+use gtfs_structures::{self, DirectionType, DirectionType::Outbound};
 use serde::{Serialize, Deserialize};
 use tokio_postgres::{NoTls, Client};
 use tokio;
@@ -33,12 +33,7 @@ impl GTFSGraph {
                     let json_value = serde_json::to_string(&times);
                     // Prepare the SQL statement with parameterized query
                     let statement = "INSERT INTO timetable(id, time) VALUES ($1, $2) RETURNING *";
-
-                    // Perform the SQL INSERT query
                     let rows = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, &route, &stop, &service), &json_value.unwrap()]).await;
-                    
-                    println!("{:#?}", rows.unwrap());
-
                 }
             }
         }
@@ -58,7 +53,7 @@ impl GTFSGraph {
     fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
-    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32) {//, start_date: &String, end_date: &String) {
+    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType) {//, start_date: &String, end_date: &String) {
         if self.old_services.contains(&service_id) {
             return;
         }
@@ -77,11 +72,17 @@ impl GTFSGraph {
         if !self.routes.get_mut(&id).unwrap().contains_key(&stop_id) {
             self.routes.get_mut(&id).unwrap().insert(stop_id.clone(), HashMap::new());
         }
-        if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&service_id) {
-            let new_stop_times = vec![arrival_string];
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(service_id, new_stop_times);
+        let mut direction = format!("{:?}", direction_id);
+        if direction == "Outbound" {
+            direction = 0.to_string();
         } else {
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&service_id).unwrap().push(arrival_string);
+            direction = 1.to_string();
+        }
+        if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&format!("{}-{}", service_id, direction)) {
+            let new_stop_times = vec![arrival_string];
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(format!("{}-{}", service_id, direction), new_stop_times);
+        } else {
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap().push(arrival_string);
         }
     }
     fn clean(&mut self) {
@@ -123,11 +124,11 @@ async fn main() {
             if !graph.stop_names.contains_key(&stop_times.stop.id) {
                 graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
             }
-            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap());
+            graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound));
         }
     }
     graph.clean();
-    //println!("{:#?}", graph);
+    println!("{:#?}", graph);
     let conn_string = "postgresql://lolpro11:lolpro11@localhost/catenary";
 
     // Establish a connection to the database
