@@ -36,7 +36,7 @@ impl GTFSGraph {
                     let direction: String = service[service.len() - 1..].to_string();
                     let statement = "INSERT INTO timetable(id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
                     let rows = client.query_one(statement, &[&self.onestop_id, &route, &stop, &service_id,  &direction, &json_value.unwrap()]).await;
-                    
+                    println!("inserted");
                 }
             }
         }
@@ -148,9 +148,5 @@ async fn main() {
         );",
         &[],
     ).await;
-    println!("{:#?}", x);
     graph.to_sql(&client).await;
-    println!("{:#?}", x);
-    //let retrieved_data = query_data(&client).await;
-    //println!("Retrieved data: {:#?}", retrieved_data);
 }
