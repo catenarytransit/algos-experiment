@@ -94,7 +94,9 @@ impl GTFSGraph {
         for route in &mut self.routes {
             for stop in route.1 {
                 for service in stop.1 {
-                    service.1.sort();
+                    for stuff in service.1 {
+                        stuff.sort();
+                    }
                 }
             }
         }
@@ -133,7 +135,7 @@ async fn main() {
         }
     }
     graph.clean();
-    //println!("{:#?}", graph);
+    println!("{:#?}", graph);
     let conn_string = "postgresql://lolpro11:lolpro11@localhost/catenary";
 
     // Establish a connection to the database
