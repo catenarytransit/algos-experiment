@@ -98,7 +98,7 @@ mod handlers {
             None => "%".to_string(),
         };
         let trip = match qs.get("trip") {
-            Some(trip) => trip.to_string(),
+            Some(trip) => format!("%{}%", trip),
             None => "%".to_string(),
         };
         let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
