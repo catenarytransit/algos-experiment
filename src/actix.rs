@@ -56,7 +56,7 @@ mod db {
         let stmt = "SELECT * FROM timetable WHERE id LIKE $1 AND route LIKE $2 AND stop LIKE $3 AND service LIKE $4 AND direction LIKE $5";
 
         let results = client
-            .query(stmt, &[&id])
+            .query(stmt, &[&id, &route, &stop, &service, &direction])
             .await?
             .iter()
             .map(|row| TimeTable::from_row_ref(row).unwrap())
