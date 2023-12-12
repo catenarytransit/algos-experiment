@@ -21,6 +21,7 @@ gtfs-rt = "*"
 osmgraphing = "1.1.1"
 actix-postgres = "*"
 qstring = "0.7"
+regex = "1.10.2"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
 tokio-pg-mapper = "*"

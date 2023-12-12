@@ -2,7 +2,7 @@ mod models {
     use serde::{Deserialize, Serialize};
     use tokio_pg_mapper_derive::PostgresMapper;
 
-    #[derive(Deserialize, PostgresMapper, Serialize)]
+    #[derive(Deserialize, PostgresMapper, Serialize, Debug, Clone)]
     #[pg_mapper(table = "timetable")]
     pub struct TimeTable {
         pub id: String,
@@ -46,7 +46,7 @@ mod db {
     use crate::{errors::MyError, models::TimeTable};
 
     pub async fn index(client: &Client, id: String) -> Result<Vec<TimeTable>, MyError> {
-        let stmt = "SELECT * FROM timetable WHERE id = $1";
+        let stmt = "SELECT * FROM timetable WHERE id LIKE $1";
 
         let results = client
             .query(stmt, &[&id])
@@ -63,20 +63,41 @@ mod handlers {
     use actix_web::{web, Error, HttpResponse, HttpRequest};
     use deadpool_postgres::{Client, Pool};
     use qstring::QString;
-    use crate::{db, errors::MyError, models::TimeTable};
+    use regex::Regex;
+    use crate::{db, errors::MyError};
 
     pub async fn index(db_pool: web::Data<Pool>, req: HttpRequest) -> Result<HttpResponse, Error> {
         let qs = QString::from(req.query_string());
-        let onestop_id = qs.get("onestop_id").unwrap_or_else(|| "f-9q5-metro~losangeles~rail");
-        let route = qs.get("route").unwrap_or_else(|| "801");   
-        let stop = qs.get("stop").unwrap_or_else(|| "80105");
-        let service = qs.get("service").unwrap_or_else(|| "RDEC23-801-2_Saturday-90");
-        let direction = qs.get("direction").unwrap_or_else(|| "1");
-        let formatted_args = format!("{}-{}-{}-{}-{}", onestop_id, route, stop, service, direction);
+        println!("{:?}", qs);
+        let mut formatted_args = String::new();
+        match qs.get("onestop_id") {
+            Some(id) => formatted_args.push_str(id),
+            None => formatted_args.push_str("%"),
+        };
+        match qs.get("route") {
+            Some(route) => formatted_args.push_str(format!("-{}", route).as_str()),
+            None => formatted_args.push_str("%"),
+        };
+        match qs.get("stop") {
+            Some(stop) => formatted_args.push_str(format!("-{}", stop).as_str()),
+            None => formatted_args.push_str("%"),
+        };
+        match qs.get("service") {
+            Some(service) => formatted_args.push_str(format!("-{}", service).as_str()),
+            None => formatted_args.push_str("%"),
+        };
+        match qs.get("direction") {
+            Some(direction) => formatted_args.push_str(format!("-{}", direction).as_str()),
+            None => formatted_args.push_str("%"),
+        };
+        let re = Regex::new("%+").unwrap();
+        let formatted_args = re.replace_all(formatted_args.as_str(), "%").to_string();
+        println!("{}", formatted_args);
         let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
-
         let timetable = db::index(&client, formatted_args).await?;
-
+        //println!("{:#?}", timetable.clone());
+        let last = timetable.last().unwrap().time.clone();
+        let last_string = last.to_string();
         Ok(HttpResponse::Ok().json(timetable))
     }
 }
