@@ -140,11 +140,11 @@ async fn main() {
         "CREATE TABLE timetable (
             id VARCHAR PRIMARY KEY,
             onestop_id VARCHAR,
-            time VARCHAR,
             route VARCHAR,
             stop VARCHAR,
             service VARCHAR,
-            direction VARCHAR
+            direction VARCHAR,
+            time VARCHAR
         );",
         &[],
     ).await;
