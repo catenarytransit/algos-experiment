@@ -14,6 +14,7 @@ mod models {
         pub stop: String,
         pub service: String,
         pub time: String,
+        pub trip_id: String,
     }
 }
 
