@@ -35,8 +35,8 @@ impl GTFSGraph {
                     let service_id: String = service[0..service.len() - 2].to_string();
                     let direction: String = service[service.len() - 1..].to_string();
                     let statement = "INSERT INTO timetable(id, onestop_id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
-                    let rows = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, route, stop, service), &self.onestop_id, &route, &stop, &service_id,  &direction, &json_value.unwrap()]).await;
-                    println!("{:#?}", rows)
+                    let _ = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, route, stop, service), &self.onestop_id, &route, &stop, &service_id,  &direction, &json_value.unwrap()]).await;
+                    //println!("{:#?}", rows)
                 }
             }
         }
@@ -131,7 +131,7 @@ async fn main() {
         }
     }
     graph.clean();
-    println!("{:#?}", graph);
+    //println!("{:#?}", graph);
     let conn_string = "postgresql://lolpro11:lolpro11@localhost/catenary";
 
     // Establish a connection to the database
