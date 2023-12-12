@@ -122,7 +122,18 @@ async fn main() -> std::io::Result<()> {
     let pool = Pool::builder(mgr).max_size(16).build().unwrap();
 
     let server = HttpServer::new(move || {
-        App::new().app_data(web::Data::new(pool.clone())).service(
+        App::new()
+        .wrap(actix_block_ai_crawling::BlockAi)
+        .add((
+            "Access-Control-Allow-Origin",
+            "https://maps.catenarymaps.org",
+        ))
+        .add((
+            "Access-Control-Allow-Origin",
+            "https://catenarymaps.org",
+        ))
+        .add(("Access-Control-Allow-Origin", "https://localhost:3000"))
+        .app_data(web::Data::new(pool.clone())).service(
             web::resource("/")
                 .route(web::get().to(index)),
         )
