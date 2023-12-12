@@ -34,7 +34,7 @@ impl GTFSGraph {
                     // Prepare the SQL statement with parameterized query
                     let service_id: String = service[0..service.len() - 2].to_string();
                     let direction: String = service[service.len() - 1..].to_string();
-                    let statement = "INSERT INTO timetable(id, onestop_id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+                    let statement = "INSERT INTO timetable(id, onestop_id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
                     let rows = client.query_one(statement, &[&format!("{}-{}-{}-{}", self.onestop_id, route, stop, service_id), &self.onestop_id, &route, &stop, &service_id,  &direction, &json_value.unwrap()]).await;
                     println!("{:#?}", rows)
                 }
