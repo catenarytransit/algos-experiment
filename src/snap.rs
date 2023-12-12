@@ -135,7 +135,7 @@ async fn main() {
         }
     }
     graph.clean();
-    println!("{:#?}", graph);
+    //println!("{:#?}", graph);
     let conn_string = "postgresql://lolpro11:lolpro11@localhost/catenary";
 
     // Establish a connection to the database
