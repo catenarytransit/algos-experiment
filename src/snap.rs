@@ -138,12 +138,12 @@ async fn main() {
     let x = client.execute(
         "CREATE TABLE IF NOT EXISTS timetable (
             id VARCHAR PRIMARY KEY,
-            time VARCHAR
-            route VARCHAR
-            stop VARCHAR
-            service VARCHAR
-            direction VARCHAR
-            time VARCHAR
+            time VARCHAR,
+            route VARCHAR,
+            stop VARCHAR,
+            service VARCHAR,
+            direction VARCHAR,
+            time VARCHAR,
         );",
         &[],
     ).await;
