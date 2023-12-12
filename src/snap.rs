@@ -33,7 +33,7 @@ impl GTFSGraph {
                     let json_value = serde_json::to_string(&times);
                     // Prepare the SQL statement with parameterized query
                     //let service: String = &service[0..service.len() - 2];
-                    let statement = "INSERT INTO timetable(id, time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+                    let statement = "INSERT INTO timetable(id, route, stop, service, direction, time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
                     let rows = client.query_one(statement, &[&self.onestop_id, &route, &stop, &service[0..service.len() - 2].to_string(),  &service[service.len() - 1..].to_string(), &json_value.unwrap()]).await;
                 }
             }

@@ -70,7 +70,6 @@ mod handlers {
     use actix_web::{web, Error, HttpResponse, HttpRequest};
     use deadpool_postgres::{Client, Pool};
     use qstring::QString;
-    use regex::Regex;
     use crate::{db, errors::MyError};
 
     pub async fn index(db_pool: web::Data<Pool>, req: HttpRequest) -> Result<HttpResponse, Error> {
