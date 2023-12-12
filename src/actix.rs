@@ -137,7 +137,7 @@ async fn main() -> std::io::Result<()> {
             "Access-Control-Allow-Origin",
             "https://catenarymaps.org",
         ))
-        .add(("Access-Control-Allow-Origin", "https://localhost:3000"))
+        .add(("Access-Control-Allow-Origin", "https://localhost"))
         )
         .app_data(web::Data::new(pool.clone())).service(
             web::resource("/")
