@@ -96,12 +96,9 @@ mod handlers {
             Some(direction) => direction.to_string(),
             None => "%".to_string(),
         };
-        let re = Regex::new("%+").unwrap();
         let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
         let timetable = db::index(&client, id, route, stop, service, direction).await?;
         //println!("{:#?}", timetable.clone());
-        let last = timetable.last().unwrap().time.clone();
-        let last_string = last.to_string();
         Ok(HttpResponse::Ok().json(timetable))
     }
 }
