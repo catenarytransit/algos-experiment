@@ -1,3 +1,6 @@
+
+use actix_web::middleware::DefaultHeaders;
+
 mod models {
     use serde::{Deserialize, Serialize};
     use tokio_pg_mapper_derive::PostgresMapper;
@@ -124,6 +127,8 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
         .wrap(actix_block_ai_crawling::BlockAi)
+        .wrap(
+            DefaultHeaders::new()
         .add((
             "Access-Control-Allow-Origin",
             "https://maps.catenarymaps.org",
@@ -133,6 +138,7 @@ async fn main() -> std::io::Result<()> {
             "https://catenarymaps.org",
         ))
         .add(("Access-Control-Allow-Origin", "https://localhost:3000"))
+        )
         .app_data(web::Data::new(pool.clone())).service(
             web::resource("/")
                 .route(web::get().to(index)),
