@@ -22,6 +22,7 @@ osmgraphing = "1.1.1"
 actix-postgres = "*"
 qstring = "0.7"
 regex = "1.10.2"
+rand = "0.8.5"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
 tokio-pg-mapper = "*"
@@ -38,6 +39,10 @@ path = "src/algo.rs"
 [[bin]]
 name = "csv"
 path = "src/csv.rs"
+
+[[bin]]
+name = "geodesic"
+path = "src/geodesic.rs"
 
 [[bin]]
 name = "test"

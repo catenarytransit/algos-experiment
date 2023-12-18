@@ -48,7 +48,6 @@ mod errors {
 }
 
 mod db {
-    use actix_web::rt::time;
     use deadpool_postgres::Client;
     use tokio_pg_mapper::FromTokioPostgresRow;
 

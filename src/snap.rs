@@ -141,7 +141,7 @@ async fn main() {
     // Establish a connection to the database
     let (client, connection) = tokio_postgres::connect(conn_string, NoTls).await.unwrap();
     tokio::spawn(connection);
-    let x = client.execute(
+    let _ = client.execute(
         "CREATE TABLE timetable (
             id VARCHAR PRIMARY KEY,
             onestop_id VARCHAR,
