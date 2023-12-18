@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-use vincenty::{vincenty_inverse, Ellipsoid};
-
-mod vincenty; 
-=======
 use vincenty::*;
 use std::f64::consts::PI;
 
@@ -13,7 +8,6 @@ fn radians(degs: f64) -> f64 {
     return degs * PI / 180.0;
 }
 
->>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
 fn dd_to_dms(degs: f64) -> (bool, u32, u32, f64) {
     let is_negative = degs < 0.0;
     let degs_abs = degs.abs();
@@ -30,13 +24,6 @@ fn dms_str(val: f64) -> String {
     let dms = dd_to_dms(val);
     format!("{}{}° {}' {:.4}\"", if dms.0 { "-" } else { "" }, dms.1, dms.2, dms.3)
 }
-<<<<<<< HEAD
-fn point_to_geodesic(pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> (f64, f64) {
-    let earth = Ellipsoid::from_descriptor(&vincenty::WGS84_ELLIPSOID_DESCRIPTOR);
-    let a_p = vincenty_inverse(pA.0, pA.1, pP.0, pP.1, &earth, 0.5, 32767);
-    let a_b = vincenty_inverse(pA.0, pA.1, pB.0, pB.1, &earth, 0.5, 32767);
-    (0.0, 0.0)
-=======
 
 static DEBUG: bool = false;
 fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
@@ -69,7 +56,6 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (
         
         p_a = (p_a2.0, p_a2.1)
     }
->>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
 }
 
 fn Test(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {

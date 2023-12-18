@@ -8,3 +8,5 @@ socal-latest.osm.pbf
 ./edges.csv
 ./nodes.csv
 .env
+geodesic.exe
+geodesic.pdb
