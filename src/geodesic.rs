@@ -56,6 +56,7 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (
         
         p_a = (p_a2.0, p_a2.1)
     }
+    return p_a;
 }
 
 fn Test(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
