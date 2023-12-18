@@ -1,7 +1,13 @@
-use vincenty::vincenty_direct;
+use vincenty::*;
+use std::f64::consts::PI;
 
 mod vincenty; 
-const RADIUS: f64 = 6378137.0;
+const R: f64 = 6378137.0;
+static DEBUG: bool = true;
+
+fn radians(degs: f64) -> f64 {
+    return degs * PI / 180.0;
+}
 
 fn dd_to_dms(degs: f64) -> (bool, u32, u32, f64) {
     let is_negative = degs < 0.0;
@@ -19,24 +25,40 @@ fn dms_str(val: f64) -> String {
     let dms = dd_to_dms(val);
     format!("{}{}° {}' {:.4}\"", if dms.0 { "-" } else { "" }, dms.1, dms.2, dms.3)
 }
-fn point_to_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
-    let earth = Ellipsoid::from_descriptor(&algo::WGS84_ELLIPSOID_DESCRIPTOR);  
+fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
+    let earth = Ellipsoid::from_descriptor(&vincenty::WGS84_ELLIPSOID_DESCRIPTOR);  
     loop {
         let ap: (f64, f64, f64, i32, bool) = vincenty_inverse(p_a.0, p_a.1, p_p.0, p_p.1, &earth, 0.5, 32767); //lat then lon
         let ab: (f64, f64, f64, i32, bool) = vincenty_inverse(p_a.0, p_a.1, p_b.0, p_b.1, &earth, 0.5, 32767);
-        let s_ap = ap.4; //placeholder
+        let s_ap = ap.3 as f64; //placeholder
         let a = ap.2 - ab.2;
 
-        let s_px = R * asin(sin(s_ap / R) * sin(radians(A)));
-        let s_ax = 2 * R * atan( sin(radians((90.0 + A) / 2.0)) / sin(radians((90.0 - A) / 2.0)) * tan((s_ap - s_px)/(2*R)) );
+        let s_px: f64 = R * (s_ap / R).sin().asin() * radians(a).sin();
+        let s_ax: f64 = 2.0 * R * ((radians((90.0 + a) / 2.0)).sin() / (radians((90.0 - a) / 2.0)).sin() * ((s_ap - s_px)/(2.0 * R)).tan()).atan();
         
-        let p_a2 = vincenty_direct(p_a.0, p_a.1, ab.2, p_p.1);
+        let p_a2 = vincenty_direct(p_a.0, p_a.1, ab.1, p_p.0,  &earth, 0.5, 32767); //placeholder
+        //need to figure out what fwd_az vs azi1 (python) and dst_m are
+        if DEBUG {
+            println!("lat2: {}   lon2: {}    newton error: {}", p_a2.0, p_a2.1, s_ax);
+        }
 
-
-
-
+        if s_ax.abs() < 10e-2 {
+            break;
+        }
+        
+        p_a = (p_a2.0, p_a2.1)
     }
+    p_a
 }
+
+fn Test(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
+    println!("a: ({},{})     b: ({},{})     p: ({},{})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
+    let result: (f64,f64) = point_to_geodesic(p_a, p_b, p_p);
+    println!("Result: ({},{})", result.0, result.1);
+}
+
 fn main() {
-    
+    Test((52.0, 5.0), (51.4, 6.0), (52.0, 5.5));
+    Test((42.0, 29.0), (39.0, -77.0), (64.0, -22.0));
+    Test((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0));
 }

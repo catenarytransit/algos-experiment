@@ -94,7 +94,7 @@ pub fn wrap(value: f64, bound: f64) -> f64 {
         vl -= bound;
     }
 
-    (vl * sign)
+    vl * sign
 }
 
 /// Wraps specified 'valuee' around 2pi
@@ -175,7 +175,7 @@ pub fn vincenty_inverse(sp_lat_rad: f64, sp_lon_rad: f64, ep_lat_rad: f64, ep_lo
         }
             
         its += 1;
-        (((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI))
+        ((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI)
     } { }
 
 
@@ -229,7 +229,7 @@ pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m:
         sigma = dst_m / (el.mnsa_m * a_) + delta_sigma;
 
         its += 1;
-        (((sigma - sigma_).abs() > eps) && (its < it_limit))
+        ((sigma - sigma_).abs() > eps) && (its < it_limit)
     } { }
     
     let x = sin_u_1 * sin_sigma - cos_u_1 * cos_sigma * cos_alpha_1;
