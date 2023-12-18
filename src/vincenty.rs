@@ -82,6 +82,25 @@ impl Ellipsoid {
     }
 }
 
+pub fn wrap(value: f64, bound: f64) -> f64 {
+    if bound <= 0.0 {
+        panic!("Specified 'bound' value should be greater than zero");
+    }
+
+    let mut vl = value.abs();
+    let sign = value.signum();
+
+    while vl > bound {
+        vl -= bound;
+    }
+
+    (vl * sign)
+}
+
+/// Wraps specified 'valuee' around 2pi
+pub fn wrap_2pi(value: f64) -> f64 {
+    wrap(value, PI2)
+}
 
 /// Residual function for Nelder-Mead (simplex) optimizer
 pub type Eps3dFunc<T> = fn(&[T], f64, f64, f64) -> f64;
