@@ -19,8 +19,8 @@ fn dms_str(val: f64) -> String {
 }
 fn point_to_geodesic(pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> (f64, f64) {
     let earth = Ellipsoid::from_descriptor(&algo::WGS84_ELLIPSOID_DESCRIPTOR);
-    let a_p = vincenty_inverse(pA.0, pA.1, pP.0, pP.1, &earth, 32767);
-    let a_b = vincenty_inverse(pA.0, pA.1, pB.0, pB.1, &earth, 32767);
+    let a_p = vincenty_inverse(pA.0, pA.1, pP.0, pP.1, &earth, 0.5, 32767);
+    let a_b = vincenty_inverse(pA.0, pA.1, pB.0, pB.1, &earth, 0.5, 32767);
     (0.0, 0.0)
 }
 fn main() {
