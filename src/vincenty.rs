@@ -191,7 +191,11 @@ pub fn vincenty_inverse(sp_lat_rad: f64, sp_lon_rad: f64, ep_lat_rad: f64, ep_lo
     let rev_az_rad = (cos_u_1 * sin_lambda).atan2(- sin_u_1 * cos_u_2 + cos_u_1 * sin_u_2 * cos_lambda);
 
     (dst_m, wrap_2pi(fwd_az_rad), wrap_2pi(rev_az_rad), its, ((its < it_limit) && (it_check < consts::PI)))
-}
+} 
+/*dst_m = ellipsoidal distance between the two points;
+  reverse azimuth = forward azimuth + 180 degrees
+  its = iterations
+  */
 
 pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m: f64, el: &Ellipsoid, eps: f64, it_limit: i32) -> (f64, f64, f64, i32) {
 
