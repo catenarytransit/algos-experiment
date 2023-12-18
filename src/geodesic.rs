@@ -15,8 +15,14 @@ fn dms_str(val: f64) -> String {
     let dms = dd_to_dms(val);
     format!("{}{}° {}' {:.4}\"", if dms.0 { "-" } else { "" }, dms.1, dms.2, dms.3)
 }
-fn point_to_geodesic(pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> (f64, f64) {
-    (0.0, 0.0)
+fn point_to_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
+    loop {
+        let ap: f64 = vincenty_inverse(p_a.0, p_a.1, p_p.0, p_p.1); //lat then lon
+        let ab: f64 = vincenty_inverse(p_a.0, p_a.1, p_b.0, p_b.1); //placeholder
+        let s_ap = ap;
+        let a = ap.;
+
+    }
 }
 fn main() {
     
