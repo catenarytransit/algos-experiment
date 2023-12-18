@@ -94,9 +94,16 @@ pub fn wrap(value: f64, bound: f64) -> f64 {
         vl -= bound;
     }
 
+<<<<<<< HEAD
     (vl * sign)
 }
 
+=======
+    vl * sign
+}
+
+/// Wraps specified 'valuee' around 2pi
+>>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
 pub fn wrap_2pi(value: f64) -> f64 {
     wrap(value, PI2)
 }
@@ -174,7 +181,11 @@ pub fn vincenty_inverse(sp_lat_rad: f64, sp_lon_rad: f64, ep_lat_rad: f64, ep_lo
         }
             
         its += 1;
+<<<<<<< HEAD
         (((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI))
+=======
+        ((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI)
+>>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
     } { }
 
 
@@ -190,7 +201,15 @@ pub fn vincenty_inverse(sp_lat_rad: f64, sp_lon_rad: f64, ep_lat_rad: f64, ep_lo
     let rev_az_rad = (cos_u_1 * sin_lambda).atan2(- sin_u_1 * cos_u_2 + cos_u_1 * sin_u_2 * cos_lambda);
 
     (dst_m, wrap_2pi(fwd_az_rad), wrap_2pi(rev_az_rad), its, ((its < it_limit) && (it_check < consts::PI)))
+<<<<<<< HEAD
 }
+=======
+} 
+/*dst_m = ellipsoidal distance between the two points;
+  reverse azimuth = forward azimuth + 180 degrees
+  its = iterations
+  */
+>>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
 
 pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m: f64, el: &Ellipsoid, eps: f64, it_limit: i32) -> (f64, f64, f64, i32) {
 
@@ -228,7 +247,11 @@ pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m:
         sigma = dst_m / (el.mnsa_m * a_) + delta_sigma;
 
         its += 1;
+<<<<<<< HEAD
         (((sigma - sigma_).abs() > eps) && (its < it_limit))
+=======
+        ((sigma - sigma_).abs() > eps) && (its < it_limit)
+>>>>>>> 7f1c517e15cf8b189550bdd4aa3bfa013614fc50
     } { }
     
     let x = sin_u_1 * sin_sigma - cos_u_1 * cos_sigma * cos_alpha_1;
