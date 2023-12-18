@@ -1,4 +1,4 @@
-mod lib; 
+mod vincenty; 
 fn dd_to_dms(degs: f64) -> (bool, u32, u32, f64) {
     let is_negative = degs < 0.0;
     let degs_abs = degs.abs();
