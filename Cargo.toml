@@ -31,7 +31,7 @@ actix_block_ai_crawling = "0.2.8"
 
 [[bin]]
 name = "actix"
-path = "src/actix.rs"
+path = "src/gtfs-backend/actix.rs"
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
@@ -57,5 +57,5 @@ name = "gtfs"
 path = "src/gtfs.rs"
 
 [[bin]]
-name = "snap"
-path = "src/snap.rs"
+name = "import"
+path = "src/gtfs-backend/import.rs"
