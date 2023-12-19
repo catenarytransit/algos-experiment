@@ -104,8 +104,16 @@ fn test_short() {
     let p_b = (51.4, 6.0);
     let p_p = (52.0, 5.5);
     let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    assert_relative_eq!(intercept.lat, 51.8460892222, epsilon = 1e-6);
-    assert_relative_eq!(intercept.lon, 5.2604285, epsilon = 1e-6);
+    let lat = dd_to_dms(intercept.lat);
+    let lon = dd_to_dms(intercept.lon);
+    assert!(!lat.is_neg);
+    assert_eq!(lat.deg, 51);
+    assert_eq!(lat.min, 50);
+    assert_relative_eq!(lat.sec, 45.9212, epsilon = 1e-4);
+    assert!(!lon.is_neg);
+    assert_eq!(lon.deg, 5);
+    assert_eq!(lon.min, 15);
+    assert_relative_eq!(lon.sec, 37.5426, epsilon = 1e-4);
     eprintln!("expected distance:  ~24 km");
     eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
 }
@@ -116,8 +124,16 @@ fn test_long() {
     let p_b = (39.0, -77.0);
     let p_p = (64.0, -22.0);
     let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    assert_relative_eq!(intercept.lat, 54.9285315, epsilon = 1e-6);
-    assert_relative_eq!(intercept.lon, -21.9372910278, epsilon = 1e-6);
+    let lat = dd_to_dms(intercept.lat);
+    let lon = dd_to_dms(intercept.lon);
+    assert!(!lat.is_neg);
+    assert_eq!(lat.deg, 54);
+    assert_eq!(lat.min, 55);
+    assert_relative_eq!(lat.sec, 42.7134, epsilon = 1e-4);
+    assert!(lon.is_neg);
+    assert_eq!(lon.deg, 21);
+    assert_eq!(lon.min, 56);
+    assert_relative_eq!(lon.sec, 14.2477, epsilon = 1e-4);
     eprintln!("expected distance:  ~1000 km");
     eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
 }
@@ -128,8 +144,16 @@ fn test_very_long() {
     let p_b = (-35.0, -70.0);
     let p_p = (64.0, -22.0);
     let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    assert_relative_eq!(intercept.lat, 37.9781176667, epsilon = 1e-6);
-    assert_relative_eq!(intercept.lon, 18.3490633056, epsilon = 1e-6);
+    let lat = dd_to_dms(intercept.lat);
+    let lon = dd_to_dms(intercept.lon);
+    assert!(!lat.is_neg);
+    assert_eq!(lat.deg, 37);
+    assert_eq!(lat.min, 58);
+    assert_relative_eq!(lat.sec, 41.2236, epsilon = 1e-4);
+    assert!(!lon.is_neg);
+    assert_eq!(lon.deg, 18);
+    assert_eq!(lon.min, 20);
+    assert_relative_eq!(lon.sec, 56.6279, epsilon = 1e-4);
     eprintln!("expected distance:  ~12200 km");
     eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
 
