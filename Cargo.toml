@@ -23,6 +23,7 @@ actix-postgres = "*"
 qstring = "0.7"
 regex = "1.10.2"
 rand = "0.8.5"
+rayon = "1.8.0"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
 tokio-pg-mapper = "*"
