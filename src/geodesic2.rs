@@ -99,7 +99,38 @@ fn main() {
 
 #[cfg(test)]
 #[test]
-// tests aren't done :P
-fn test_PtG() {
-    assert_relative_eq!(1.0, 1.0);
+fn test_short() {
+    let pA = (52.0, 5.0);
+    let pB = (51.4, 6.0);
+    let pP = (52.0, 5.5);
+    let intercept: Intercept = point_to_geodesic(pA, pB, pP);
+    assert_relative_eq!(intercept.lat, 51.8460892222, epsilon = 1e-6);
+    assert_relative_eq!(intercept.lon, 5.2604285, epsilon = 1e-6);
+    eprintln!("expected distance:  ~24 km");
+    eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
+}
+
+#[test]
+fn test_long() {
+    let pA = (42.0, 29.0);
+    let pB = (39.0, -77.0);
+    let pP = (64.0, -22.0);
+    let intercept: Intercept = point_to_geodesic(pA, pB, pP);
+    assert_relative_eq!(intercept.lat, 54.9285315, epsilon = 1e-6);
+    assert_relative_eq!(intercept.lon, -21.9372910278, epsilon = 1e-6);
+    eprintln!("expected distance:  ~1000 km");
+    eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
+}
+
+#[test]
+fn test_very_long() {
+    let pA = (42.0, 29.0);
+    let pB = (-35.0, -70.0);
+    let pP = (64.0, -22.0);
+    let intercept: Intercept = point_to_geodesic(pA, pB, pP);
+    assert_relative_eq!(intercept.lat, 37.9781176667, epsilon = 1e-6);
+    assert_relative_eq!(intercept.lon, 18.3490633056, epsilon = 1e-6);
+    eprintln!("expected distance:  ~12200 km");
+    eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
+
 }
