@@ -12,6 +12,7 @@ use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
 
  const DEBUG: bool = true;
 
+#[derive(Debug)]
 struct Intercept {
     lat: f64,
     lon: f64,
@@ -92,7 +93,12 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
 }
 
 fn main() {
-    point_to_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5));
+    println!("24 km case:");
+    println!("{:?}", point_to_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
+    println!("1000 km case:");
+    println!("{:?}", point_to_geodesic((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
+    println!("12200 km case:");
+    println!("{:?}", point_to_geodesic((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
 }
 
 #[cfg(test)]
