@@ -59,3 +59,7 @@ path = "src/gtfs.rs"
 [[bin]]
 name = "import"
 path = "src/gtfs-backend/import.rs"
+
+[[bin]]
+name = "parallel"
+path = "src/parallel.rs"
