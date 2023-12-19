@@ -14,6 +14,12 @@ use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic, capability};
  const OUTMASK: u64 =
     capability::STANDARD | capability::REDUCEDLENGTH | capability::GEODESICSCALE;
 
+struct Intercept {
+    lat: f64,
+    lon: f64,
+    dist: f64,
+}
+
 struct DMS {
     is_neg: bool,
     deg: u8,
@@ -48,7 +54,7 @@ fn radians(degrees: f64) -> f64 {
     degrees * PI / 180.0
 }
 
-fn point_to_geodesic(mut pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> (f64, f64, f64) {
+fn point_to_geodesic(mut pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> Intercept {
     let geod = Geodesic::wgs84();
     // value of semi major axis in WGS84 according to library source code since
     // geod.a is a private member
@@ -79,7 +85,7 @@ fn point_to_geodesic(mut pA: (f64, f64), pB: (f64, f64), pP: (f64, f64)) -> (f64
             println!("{}, {}, {}, {:.4}", iter_num + 1, dd_to_dms(pA2_lat2), dd_to_dms(pA2_lon2), s_ax)
         }
         if s_ax.abs() < 1e-2 {
-            return (pA.0, pA.1, s_ap);
+            return Intercept{lat: pA.0, lon: pA.1, dist: s_ap};
         }
         pA = (pA2_lat2, pA2_lon2);
         iter_num += 1;
