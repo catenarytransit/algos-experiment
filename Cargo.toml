@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "*"
+approx = "0.5.1"
 chrono = "0.4.31"
 csv = "*"
 derive_more = "0.99.17"
@@ -24,7 +25,7 @@ qstring = "0.7"
 regex = "1.10.2"
 rand = "0.8.5"
 rayon = "1.8.0"
-geographiclib = "0.1.0"
+geographiclib-rs = "0.2.3"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
 tokio-pg-mapper = "*"
