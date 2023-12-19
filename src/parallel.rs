@@ -1,8 +1,8 @@
 use rayon::prelude::*;
-use std::collections::{HashMap, BinaryHeap};
+use rayon::ThreadPoolBuilder;
 use std::fs::File;
 
-use csv::{ReaderBuilder, StringRecord};
+use csv::{ReaderBuilder};
 
 const MAX: f64 = f64::MAX;
 
@@ -91,12 +91,14 @@ impl Graph {
 
 fn main() {
     let mut graph = Graph::new();
+    let thread_pool = ThreadPoolBuilder::new().num_threads(16).build().unwrap();
     let edges = File::open("edges.csv").unwrap();
     let mut rdr = ReaderBuilder::new()
         .has_headers(true)
         .from_reader(edges);
     let records_iterator = rdr.records();
-    let edges: Vec<_> = records_iterator
+    let edges: Vec<_> = thread_pool.install(|| {
+        records_iterator
         .par_bridge()
         .map(|record| {
             let record = record.unwrap();
@@ -125,7 +127,8 @@ fn main() {
                 },
                 train: record[10].to_string(),
             }
-        }).collect();
+        }).collect()
+    });
     for edge in edges {
         graph.add_edge_obj(edge);
     }
@@ -135,16 +138,19 @@ fn main() {
         .has_headers(true)
         .from_reader(nodes);
     let records_iterator = rdr.records();
-    let nodes: Vec<_> = records_iterator
-        .par_bridge()
-        .map(|record| {
-            let record = record.unwrap();
-            Node {
-                id: record[0].parse().unwrap(),
-                lon: record[1].parse().unwrap(),
-                lat: record[2].parse().unwrap(),
-            }
-        }).collect();
+    let nodes: Vec<_> = thread_pool.install(|| {
+        records_iterator
+            .par_bridge()
+            .map(|record| {
+                let record = record.unwrap();
+                Node {
+                    id: record[0].parse().unwrap(),
+                    lon: record[1].parse().unwrap(),
+                    lat: record[2].parse().unwrap(),
+                }
+            })
+            .collect()
+    });
     for node in nodes {
         graph.add_node_obj(node);
     }
