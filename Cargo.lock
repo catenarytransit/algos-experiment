@@ -300,6 +300,7 @@ dependencies = [
  "deadpool-postgres",
  "derive_more",
  "diesel",
+ "geographiclib",
  "gtfs-rt",
  "gtfs-structures",
  "osmgraphing",
@@ -1099,6 +1100,15 @@ checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
+]
+
+[[package]]
+name = "geographiclib"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d12c127ed5166b6abefae6b03435679faac14e30416f42b11ddea78eb05b9a2a"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
