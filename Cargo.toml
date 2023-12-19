@@ -46,6 +46,10 @@ name = "geodesic"
 path = "src/geodesic.rs"
 
 [[bin]]
+name = "geodesic2"
+path = "src/geodesic2.rs"
+
+[[bin]]
 name = "test"
 path = "src/test.rs"
 
