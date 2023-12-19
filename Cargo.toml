@@ -23,6 +23,7 @@ actix-postgres = "*"
 qstring = "0.7"
 regex = "1.10.2"
 rand = "0.8.5"
+rayon = "1.8.0"
 tokio = { version = "*", features = ["full"] }
 tokio-postgres = "*"
 tokio-pg-mapper = "*"
@@ -31,7 +32,7 @@ actix_block_ai_crawling = "0.2.8"
 
 [[bin]]
 name = "actix"
-path = "src/actix.rs"
+path = "src/gtfs-backend/actix.rs"
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
@@ -57,5 +58,9 @@ name = "gtfs"
 path = "src/gtfs.rs"
 
 [[bin]]
-name = "snap"
-path = "src/snap.rs"
+name = "import"
+path = "src/gtfs-backend/import.rs"
+
+[[bin]]
+name = "parallel"
+path = "src/parallel.rs"
