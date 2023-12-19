@@ -2,7 +2,7 @@ use core::fmt;
 use std::f64::consts::PI;
 use approx::assert_relative_eq;
 // using geographiclib_rs because geographiclib doesnt provide the m12 and M12 required by Karney's improvements to BML
-use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic, capability};
+use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
 
 
 /*
@@ -11,8 +11,6 @@ use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic, capability};
  */
 
  const DEBUG: bool = true;
- const OUTMASK: u64 =
-    capability::STANDARD | capability::REDUCEDLENGTH | capability::GEODESICSCALE;
 
 struct Intercept {
     lat: f64,
