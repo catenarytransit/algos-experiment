@@ -63,9 +63,9 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         /* 
          * the 7-tuple gives us (in order):
          * s12, azi1, azi2, m12, M12, M21, a12
-         * from the library source code (around line 1130 in geodesic.rs as of
+         * from the library source code (around line 1130 in geodesic.rs as of 
          * f8d9f98), there is no way to get m12 and M12 without a12
-         * i don't know enough rust to know if there's a better way than typing out the full 7-tuple
+         * https://github.com/georust/geographiclib-rs/blob/main/src/geodesic.rs#L1096
          */ 
         let (s_ap, azi1_ap, _, m_ap, M_ap, _, _) =
             geod.inverse(p_a.0, p_a.1, p_p.0, p_p.1);
