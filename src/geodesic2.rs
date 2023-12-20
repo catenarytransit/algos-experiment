@@ -1,9 +1,7 @@
 use core::fmt;
-use std::f64::consts::PI;
-use approx::assert_relative_eq;
 // using geographiclib_rs because geographiclib doesnt provide the m12 and M12 required by Karney's improvements to BML
 use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
-
+use std::time::SystemTime;
 
 /*
  * primarily a translation of the python code provided in the link below into rust
@@ -55,6 +53,7 @@ fn dd_to_dms(degs: f64) -> DMS {
 fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> Intercept {
     let geod = Geodesic::wgs84();
     let mut iter_num = 0;
+    let mut s_ax: f64;
     loop {
         /* 
          * the 7-tuple gives us (in order):
@@ -63,18 +62,17 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
          * f8d9f98), there is no way to get m12 and M12 without a12
          * https://github.com/georust/geographiclib-rs/blob/main/src/geodesic.rs#L1096
          */ 
-        let (s_ap, azi1_ap, _, m_ap, M_ap, _, _) =
+        let (s_ap, azi1_ap, _, m_ap, mm_ap, _, _) =
             geod.inverse(p_a.0, p_a.1, p_p.0, p_p.1);
         // the 3-tuple gives: azi1, azi2, a12
         let (azi1_ab, _, _) =
             geod.inverse(p_a.0, p_a.1, p_b.0, p_b.1);
-        let A = azi1_ap - azi1_ab;
-        let mut s_ax: f64 = 0.0;
+        let a = azi1_ap - azi1_ab;
+        s_ax = m_ap * a.to_radians().cos() / ((m_ap / s_ap) * a.to_radians().cos().powi(2) + mm_ap * a.to_radians().sin().powi(2));
         if iter_num == 0 {
-            s_ax = R * ((s_ap / R).sin() * A.to_radians().cos()).atan2((s_ap / R).cos());
-        } else {
-            s_ax = m_ap * A.to_radians().cos() / ((m_ap / s_ap) * A.to_radians().cos().powi(2) + M_ap * A.to_radians().sin().powi(2));
+            s_ax = R * ((s_ap / R).sin() * a.to_radians().cos()).atan2((s_ap / R).cos());
         }
+        
         let (p_a2_lat2, p_a2_lon2) = geod.direct(p_a.0, p_a.1, azi1_ab, s_ax);
         if DEBUG {
             eprintln!("{}, {}, {}, {:.4}", iter_num + 1, dd_to_dms(p_a2_lat2), dd_to_dms(p_a2_lon2), s_ax)
@@ -87,13 +85,22 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
     }
 }
 
+fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
+    println!("a: ({}, {})     b: ({}, {})     p: ({}, {})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
+    let start = SystemTime::now();
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    let end = SystemTime::now();
+    let duration = end.duration_since(start).expect("Clock may have gone backwards");
+    println!("Result: ({}, {}, {} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
+}
+
 fn main() {
     println!("24 km case:");
-    println!("{:?}", point_to_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
+    println!("{:?}", test_point((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
     println!("1000 km case:");
-    println!("{:?}", point_to_geodesic((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
+    println!("{:?}", test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
     println!("12200 km case:");
-    println!("{:?}", point_to_geodesic((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
+    println!("{:?}", test_point((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
 }
 
 #[cfg(test)]
