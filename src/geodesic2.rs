@@ -1,4 +1,5 @@
 use core::fmt;
+use approx::assert_relative_eq;
 // using geographiclib_rs because geographiclib doesnt provide the m12 and M12 required by Karney's improvements to BML
 use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
 use std::time::SystemTime;
@@ -87,11 +88,11 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
 
 fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
     println!("a: ({}, {})     b: ({}, {})     p: ({}, {})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
-    let start = SystemTime::now();
+    let start = SystemTime::now(); //time right before geodesic calculation
     let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    let end = SystemTime::now();
+    let end = SystemTime::now(); //time right after, next line finds difference
     let duration = end.duration_since(start).expect("Clock may have gone backwards");
-    println!("Result: ({}, {}, {} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
+    println!("Result: ({}, {}, {:.8} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
 }
 
 fn main() {
