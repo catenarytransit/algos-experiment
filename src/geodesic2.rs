@@ -52,10 +52,6 @@ fn dd_to_dms(degs: f64) -> DMS {
     }
 }
 
-fn radians(degrees: f64) -> f64 {
-    degrees * PI / 180.0
-}
-
 fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> Intercept {
     let geod = Geodesic::wgs84();
     let mut iter_num = 0;
@@ -75,9 +71,9 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         let A = azi1_ap - azi1_ab;
         let mut s_ax: f64 = 0.0;
         if iter_num == 0 {
-            s_ax = R * ((s_ap / R).sin() * radians(A).cos()).atan2((s_ap / R).cos());
+            s_ax = R * ((s_ap / R).sin() * A.to_radians().cos()).atan2((s_ap / R).cos());
         } else {
-            s_ax = m_ap * radians(A).cos() / ((m_ap / s_ap) * radians(A).cos().powi(2) + M_ap * radians(A).sin().powi(2));
+            s_ax = m_ap * A.to_radians().cos() / ((m_ap / s_ap) * A.to_radians().cos().powi(2) + M_ap * A.to_radians().sin().powi(2));
         }
         let (p_a2_lat2, p_a2_lon2) = geod.direct(p_a.0, p_a.1, azi1_ab, s_ax);
         if DEBUG {
