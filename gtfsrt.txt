@@ -1,95 +1,56 @@
-struct FeedEntity {
-    id: String,
-    is_deleted: Option<bool>,
-    trip_update: Option<{
-        trip: {
-            trip_id: Option<String>,
-            route_id: Option<String>,
-            direction_id: Option<u32>,
-            start_time: Option<String>,
-            start_date: Option<String>,
-            schedule_relationship: Option<i32>,
-        },
-        vehicle: Option<{
-            id: Option<String>,
-            label: Option<String>,
-            license_plate: Option<String>,
-            wheelchair_accessible: Option<i32>,
+struct FeedMessage {
+    header: {
+        gtfs_realtime_version: String,
+        incrementality: Option<i32>,
+        timestamp: Option<u64>,
+    },
+    entity: Vec<
+        id: String,
+        is_deleted: Option<bool>,
+        trip_update: Option<{
+            trip: {
+                trip_id: Option<String>,
+                route_id: Option<String>,
+                direction_id: Option<u32>,
+                start_time: Option<String>,
+                start_date: Option<String>,
+                schedule_relationship: Option<i32>,
+            },
+            vehicle: Option<{
+                id: Option<String>,
+                label: Option<String>,
+                license_plate: Option<String>,
+                wheelchair_accessible: Option<i32>,
+            }>,
+            stop_time_update: Vec<
+                stop_sequence: Option<u32>,
+                stop_id: Option<String>,
+                arrival: Option<
+                    delay: Option<i32>,
+                    time: Option<i64>,
+                    uncertainty: Option<i32>,
+                >,
+                departure: Option<
+                    delay: Option<i32>,
+                    time: Option<i64>,
+                    uncertainty: Option<i32>,
+                >,
+                departure_occupancy_status: Option<i32>,
+                schedule_relationship: Option<i32>,
+                stop_time_properties: Option<
+                    assigned_stop_id: Option<String>,
+                >,
+            >,
+            timestamp: Option<u64>,
+            delay: Option<i32>,
+            trip_properties: Option<
+                trip_id: Option<String>,
+                start_date: Option<String>,
+                start_time: Option<String>,
+                shape_id: Option<String>,
+            >,
         }>,
-        stop_time_update: Vec<
-            stop_sequence: Option<u32>,
-            stop_id: Option<String>,
-            arrival: Option<
-                delay: Option<i32>,
-                time: Option<i64>,
-                uncertainty: Option<i32>,
-            >,
-            departure: Option<
-                delay: Option<i32>,
-                time: Option<i64>,
-                uncertainty: Option<i32>,
-            >,
-            departure_occupancy_status: Option<i32>,
-            schedule_relationship: Option<i32>,
-            stop_time_properties: Option<
-                assigned_stop_id: Option<String>,
-            >,
-        >,
-        timestamp: Option<u64>,
-        delay: Option<i32>,
-        trip_properties: Option<
-            trip_id: Option<String>,
-            start_date: Option<String>,
-            start_time: Option<String>,
-            shape_id: Option<String>,
-        >,
-    }>,
-    vehicle: Option<
-        trip: Option<
-            trip_id: Option<String>,
-            route_id: Option<String>,
-            direction_id: Option<u32>,
-            start_time: Option<String>,
-            start_date: Option<String>,
-            schedule_relationship: Option<i32>,
-        >,
         vehicle: Option<
-            id: Option<String>,
-            label: Option<String>,
-            license_plate: Option<String>,
-            wheelchair_accessible: Option<i32>,
-        >,
-        position: Option<
-            latitude: f32,
-            longitude: f32,
-            bearing: Option<f32>,
-            odometer: Option<f64>,
-            speed: Option<f32>,
-        >,
-        current_stop_sequence: Option<u32>,
-        stop_id: Option<String>,
-        current_status: Option<i32>,
-        timestamp: Option<u64>,
-        congestion_level: Option<i32>,
-        occupancy_status: Option<i32>,
-        occupancy_percentage: Option<u32>,
-        multi_carriage_details: Vec<
-            id: Option<String>,
-            label: Option<String>,
-            occupancy_status: Option<i32>,
-            occupancy_percentage: Option<i32>,
-            carriage_sequence: Option<u32>,
-        >,
-    >,
-    alert: Option<
-        active_period: Vec<
-            start: Option<u64>,
-            end: Option<u64>,
-        >,
-        informed_entity: Vec<
-            agency_id: Option<String>,
-            route_id: Option<String>,
-            route_type: Option<i32>,
             trip: Option<
                 trip_id: Option<String>,
                 route_id: Option<String>,
@@ -98,70 +59,116 @@ struct FeedEntity {
                 start_date: Option<String>,
                 schedule_relationship: Option<i32>,
             >,
+            vehicle: Option<
+                id: Option<String>,
+                label: Option<String>,
+                license_plate: Option<String>,
+                wheelchair_accessible: Option<i32>,
+            >,
+            position: Option<
+                latitude: f32,
+                longitude: f32,
+                bearing: Option<f32>,
+                odometer: Option<f64>,
+                speed: Option<f32>,
+            >,
+            current_stop_sequence: Option<u32>,
             stop_id: Option<String>,
-            direction_id: Option<u32>,
-        >,
-        cause: Option<i32>,
-        effect: Option<i32>,
-        url: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
+            current_status: Option<i32>,
+            timestamp: Option<u64>,
+            congestion_level: Option<i32>,
+            occupancy_status: Option<i32>,
+            occupancy_percentage: Option<u32>,
+            multi_carriage_details: Vec<
+                id: Option<String>,
+                label: Option<String>,
+                occupancy_status: Option<i32>,
+                occupancy_percentage: Option<i32>,
+                carriage_sequence: Option<u32>,
             >,
         >,
-        header_text: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
+        alert: Option<
+            active_period: Vec<
+                start: Option<u64>,
+                end: Option<u64>,
+            >,
+            informed_entity: Vec<
+                agency_id: Option<String>,
+                route_id: Option<String>,
+                route_type: Option<i32>,
+                trip: Option<
+                    trip_id: Option<String>,
+                    route_id: Option<String>,
+                    direction_id: Option<u32>,
+                    start_time: Option<String>,
+                    start_date: Option<String>,
+                    schedule_relationship: Option<i32>,
+                >,
+                stop_id: Option<String>,
+                direction_id: Option<u32>,
+            >,
+            cause: Option<i32>,
+            effect: Option<i32>,
+            url: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            header_text: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            description_text: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            tts_header_text: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            tts_description_text: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            severity_level: Option<i32>,
+            image: Option<
+                localized_image: Vec<
+                    url: String,
+                    media_type: String,
+                    language: Option<String>,
+                >,
+            >,
+            image_alternative_text: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            cause_detail: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
+            >,
+            effect_detail: Option<
+                translation: Vec<
+                    text: String,
+                    language: Option<String>,
+                >,
             >,
         >,
-        description_text: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
+        shape: Option<
+            shape_id: Option<String>,
+            encoded_polyline: Option<String>,
         >,
-        tts_header_text: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
-        >,
-        tts_description_text: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
-        >,
-        severity_level: Option<i32>,
-        image: Option<
-            localized_image: Vec<
-                url: String,
-                media_type: String,
-                language: Option<String>,
-            >,
-        >,
-        image_alternative_text: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
-        >,
-        cause_detail: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
-        >,
-        effect_detail: Option<
-            translation: Vec<
-                text: String,
-                language: Option<String>,
-            >,
-        >,
-    >,
-    shape: Option<
-        shape_id: Option<String>,
-        encoded_polyline: Option<String>,
-    >,
+    >
 }
