@@ -10,8 +10,11 @@ use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
  * https://sourceforge.net/p/geographiclib/discussion/1026621/thread/21aaff9f/?page=2&limit=25#766f
  */
 
- const DEBUG: bool = true;
-
+const DEBUG: bool = true;
+// value of semi major axis in WGS84 according to library source code since
+// geod.a is a private member
+const R: f64 = 6378137.0;
+ 
 #[derive(Debug)]
 struct Intercept {
     lat: f64,
@@ -55,9 +58,6 @@ fn radians(degrees: f64) -> f64 {
 
 fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> Intercept {
     let geod = Geodesic::wgs84();
-    // value of semi major axis in WGS84 according to library source code since
-    // geod.a is a private member
-    let R: f64 = 6378137.0;
     let mut iter_num = 0;
     loop {
         /* 
@@ -89,7 +89,6 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         p_a = (p_a2_lat2, p_a2_lon2);
         iter_num += 1;
     }
-
 }
 
 fn main() {
@@ -160,5 +159,4 @@ fn test_very_long() {
     assert_relative_eq!(lon.sec, 56.6279, epsilon = 1e-4);
     eprintln!("expected distance:  ~12200 km");
     eprintln!("calculated distance: {} km", intercept.dist / 1000.0);
-
 }
