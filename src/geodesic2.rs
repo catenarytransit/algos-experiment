@@ -77,7 +77,7 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         if iter_num == 0 {
             s_ax = R * ((s_ap / R).sin() * radians(A).cos()).atan2((s_ap / R).cos());
         } else {
-            s_ax = m_ap * radians(A).cos() / ((m_ap / s_ap) * radians(A).cos().exp2() + M_ap * radians(A).sin().exp2());
+            s_ax = m_ap * radians(A).cos() / ((m_ap / s_ap) * radians(A).cos().powi(2) + M_ap * radians(A).sin().powi(2));
         }
         let (p_a2_lat2, p_a2_lon2) = geod.direct(p_a.0, p_a.1, azi1_ab, s_ax);
         if DEBUG {
