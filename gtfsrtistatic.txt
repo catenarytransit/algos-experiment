@@ -78,10 +78,10 @@ struct FeedMessage {
             current_stop_sequence: Option<u32>,
             stop_id: Option<String>,
             current_status: Option<i32>,
-            timestamp: Option<u64>,
-            congestion_level: Option<i32>,
-            occupancy_status: Option<i32>,
-            occupancy_percentage: Option<u32>,
+            timestamp: Variable,
+            congestion_level: Variable,
+            occupancy_status: Variable,
+            occupancy_percentage: Variable,
             multi_carriage_details: Vec<
                 id: Option<String>,
                 label: Option<String>,
@@ -92,8 +92,8 @@ struct FeedMessage {
         >,
         alert: Option<
             active_period: Vec<
-                start: Option<u64>,
-                end: Option<u64>,
+                start: Static,
+                end: Static,
             >,
             informed_entity: Vec<
                 agency_id: Option<String>,
