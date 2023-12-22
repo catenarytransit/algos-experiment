@@ -52,6 +52,10 @@ name = "geodesic2"
 path = "src/geodesic2.rs"
 
 [[bin]]
+name = "percent_distance"
+path = "src/percent_distance.rs"
+
+[[bin]]
 name = "test"
 path = "src/test.rs"
 
