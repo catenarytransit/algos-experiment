@@ -31,6 +31,8 @@ tokio-postgres = "*"
 tokio-pg-mapper = "*"
 tokio-pg-mapper-derive = "*"
 actix_block_ai_crawling = "0.2.8"
+geo = "0.27.0"
+itertools = "0.12.0"
 
 [[bin]]
 name = "actix"
