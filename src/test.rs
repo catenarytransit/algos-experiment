@@ -124,6 +124,17 @@ fn main() {
             },
             train: record[10].to_string(),
         };
+
+        let coordinates: Vec<(f64, f64)> = record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
+            .filter_map(|coord| {
+                let mut parts = coord.split_whitespace();
+                let lon_str = parts.next()?;
+                let lat_str = parts.next()?;
+                let lon: f64 = lon_str.parse().ok()?;
+                let lat: f64 = lat_str.parse().ok()?;
+                Some((lon, lat))
+            })
+            .collect();
         graph.add_edge_obj(edge);
     }
     let nodes = File::open("nodes.csv").unwrap();
@@ -135,7 +146,7 @@ fn main() {
         let node = Node {
             id: record[0].parse().unwrap(),
             lon: record[1].parse().unwrap(),
-            lat: record[2].parse().unwrap(),
+            lat: record[2].parse().unwrap()
         };
         graph.add_node_obj(node);
     }
