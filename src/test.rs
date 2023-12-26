@@ -3,6 +3,7 @@ use std::collections::{HashMap, BinaryHeap};
 use std::fs::File;
 
 use csv::ReaderBuilder;
+use osmgraphing::configs::writing::network::graph;
 
 const MAX: f64 = f64::MAX;
 
@@ -12,7 +13,7 @@ struct Graph {
     edges: Vec<Edge>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct Node {
     id: u64,
     lon: f64,
@@ -29,7 +30,7 @@ impl Node {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct Edge {
     id: String,
     osm_id: String,
@@ -41,12 +42,12 @@ struct Edge {
     car_backward: String,
     bike_forward: bool,
     bike_backward: bool,
-    train: String
-    //linestring: String,
+    train: String,
+    linestring: Vec<(f64,f64)>,
 }
 
 impl Edge {
-    fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String) -> Self {
+    fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) -> Self {
         Self {
             id: id,
             osm_id: osm_id,
@@ -59,6 +60,7 @@ impl Edge {
             bike_forward: bike_forward,
             bike_backward: bike_backward,
             train: train,
+            linestring: linestring,
         }
     }
 }
@@ -71,6 +73,79 @@ impl Graph {
         }
     }
 
+    fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
+        let mut graph = Self {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+        };
+        /*let file = File::open(edge_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(file);
+        for result in rdr.deserialize::<Edge>() {
+            let edge: Edge = result.unwrap();
+            graph.add_edge_obj(edge);
+        }
+        let file = File::open(node_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(file);
+        for result in rdr.deserialize::<Node>() {
+            let node: Node = result.unwrap();
+            graph.add_node_obj(node);
+        }*/
+        let edges = File::open(edge_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(edges);
+
+        for record in rdr.records() {
+            let record = record.unwrap();
+            let edge = Edge {
+                id: record[0].to_string(),
+                osm_id: record[1].parse().unwrap(),
+                source: record[2].parse().unwrap(),
+                target: record[3].parse().unwrap(),
+                length: record[4].parse().unwrap(),
+                foot: if record[5].parse::<String>().unwrap() == "Allowed" {
+                    true
+                } else {
+                    false
+                },            
+                car_forward: record[6].to_string(),
+                car_backward: record[7].to_string(),
+                bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
+                    true
+                } else {
+                    false
+                },  
+                bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
+                    true
+                } else {
+                    false
+                },
+                train: record[10].to_string(),
+                linestring: record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
+                .filter_map(|coord| {
+                    let mut parts = coord.split_whitespace();
+                    let lon_str = parts.next().unwrap();
+                    let lat_str = parts.next().unwrap();
+                    let lon: f64 = lon_str.parse().ok().unwrap();
+                    let lat: f64 = lat_str.parse().ok().unwrap();
+                    Some((lon, lat))
+                })
+                .collect()
+            };
+            graph.add_edge_obj(edge);
+        }
+        let nodes = File::open(node_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(nodes);
+        for record in rdr.records() {
+            let record = record.unwrap();
+            let node = Node {
+                id: record[0].parse().unwrap(),
+                lon: record[1].parse().unwrap(),
+                lat: record[2].parse().unwrap()
+            };
+            graph.add_node_obj(node);
+        }
+        graph
+    }
+
     fn add_node(&mut self, id: u64, lon: f64, lat: f64) {
         self.nodes.push(Node::new(id, lon, lat));
     }
@@ -78,8 +153,8 @@ impl Graph {
     fn add_node_obj(&mut self, node: Node) {
         self.nodes.push(node);
     }
-    fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String) {
-        self.edges.push(Edge::new(id, osm_id, source, target, length, foot, car_forward, car_backward, bike_forward, bike_backward, train))
+    fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) {
+        self.edges.push(Edge::new(id, osm_id, source, target, length, foot, car_forward, car_backward, bike_forward, bike_backward, train, linestring))
     }
 
     fn add_edge_obj(&mut self, edge: Edge) {
@@ -90,64 +165,5 @@ impl Graph {
 }
 
 fn main() {
-    let mut graph = Graph::new();
-    let edges = File::open("edges.csv").unwrap();
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(edges);
-
-    // Iterate over the CSV records
-    for record in rdr.records() {
-        let record = record.unwrap();
-        let edge = Edge {
-            id: record[0].to_string(),
-            osm_id: record[1].parse().unwrap(),
-            source: record[2].parse().unwrap(),
-            target: record[3].parse().unwrap(),
-            length: record[4].parse().unwrap(),
-            foot: if record[5].parse::<String>().unwrap() == "Allowed" {
-                true
-            } else {
-                false
-            },            
-            car_forward: record[6].to_string(),
-            car_backward: record[7].to_string(),
-            bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
-                true
-            } else {
-                false
-            },  
-            bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
-                true
-            } else {
-                false
-            },
-            train: record[10].to_string(),
-        };
-
-        let coordinates: Vec<(f64, f64)> = record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
-            .filter_map(|coord| {
-                let mut parts = coord.split_whitespace();
-                let lon_str = parts.next()?;
-                let lat_str = parts.next()?;
-                let lon: f64 = lon_str.parse().ok()?;
-                let lat: f64 = lat_str.parse().ok()?;
-                Some((lon, lat))
-            })
-            .collect();
-        graph.add_edge_obj(edge);
-    }
-    let nodes = File::open("nodes.csv").unwrap();
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(nodes);
-    for record in rdr.records() {
-        let record = record.unwrap();
-        let node = Node {
-            id: record[0].parse().unwrap(),
-            lon: record[1].parse().unwrap(),
-            lat: record[2].parse().unwrap()
-        };
-        graph.add_node_obj(node);
-    }
+    let mut graph = Graph::from_csv("edges.csv", "nodes.csv");
 }
