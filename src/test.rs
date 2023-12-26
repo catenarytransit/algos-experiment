@@ -150,17 +150,34 @@ impl Graph {
             handle.join().unwrap();
         }
 
-        let nodes = File::open(node_file_path).unwrap();
+        let nodes = File::open(node_file_path).expect("Failed to open file");
         let mut rdr = ReaderBuilder::new().from_reader(nodes);
-        for record in rdr.records() {
-            let record = record.unwrap();
-            let node = Node {
-                id: record[0].parse().unwrap(),
-                lon: record[1].parse().unwrap(),
-                lat: record[2].parse().unwrap()
-            };
-            graph.add_node_obj(node);
+
+        let handles: Vec<_> = rdr.records().filter_map(|record| {
+            match record {
+                Ok(record) => Some(thread::spawn({
+                    let shared_graph_clone = Arc::clone(&shared_graph);
+                    move || {
+                        let node = Node {
+                            id: record[0].parse().unwrap(),
+                            lon: record[1].parse().unwrap(),
+                            lat: record[2].parse().unwrap()
+                        };
+                        let mut graph = shared_graph_clone.lock().unwrap();
+                        graph.add_node_obj(node);
+                    }
+                })),
+                Err(err) => {
+                    eprintln!("Error reading record: {}", err);
+                    None
+                }
+            }
+        }).collect();
+
+        for handle in handles {
+            handle.join().unwrap();
         }
+        println!("{:?}", graph);
         graph
     }
 
