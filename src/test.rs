@@ -1,6 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, BinaryHeap};
 use std::fs::File;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use csv::ReaderBuilder;
 use osmgraphing::configs::writing::network::graph;
@@ -92,46 +94,62 @@ impl Graph {
         }*/
         let edges = File::open(edge_file_path).unwrap();
         let mut rdr = ReaderBuilder::new().from_reader(edges);
+        let shared_graph = Arc::new(Mutex::new(graph.clone()));
+        let handles: Vec<_> = rdr.records().filter_map(|record| {
+            match record {
+                Ok(record) => Some(thread::spawn({
+                    let shared_graph_clone = Arc::clone(&shared_graph);
+                    move || {
+                        let edge = Edge {
+                            id: record[0].to_string(),
+                            osm_id: record[1].parse().unwrap(),
+                            source: record[2].parse().unwrap(),
+                            target: record[3].parse().unwrap(),
+                            length: record[4].parse().unwrap(),
+                            foot: if record[5].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },            
+                            car_forward: record[6].to_string(),
+                            car_backward: record[7].to_string(),
+                            bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },  
+                            bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },
+                            train: record[10].to_string(),
+                            linestring: record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
+                            .filter_map(|coord| {
+                                let mut parts = coord.split_whitespace();
+                                let lon_str = parts.next().unwrap();
+                                let lat_str = parts.next().unwrap();
+                                let lon: f64 = lon_str.parse().ok().unwrap();
+                                let lat: f64 = lat_str.parse().ok().unwrap();
+                                Some((lon, lat))
+                            })
+                            .collect()
+                        };
+                        let mut graph = shared_graph_clone.lock().unwrap();
+                        graph.add_edge_obj(edge);
+                    }
+                })),
+                Err(err) => {
+                    eprintln!("Error reading record: {}", err);
+                    None
+                }
+            }
+        }).collect();
 
-        for record in rdr.records() {
-            let record = record.unwrap();
-            let edge = Edge {
-                id: record[0].to_string(),
-                osm_id: record[1].parse().unwrap(),
-                source: record[2].parse().unwrap(),
-                target: record[3].parse().unwrap(),
-                length: record[4].parse().unwrap(),
-                foot: if record[5].parse::<String>().unwrap() == "Allowed" {
-                    true
-                } else {
-                    false
-                },            
-                car_forward: record[6].to_string(),
-                car_backward: record[7].to_string(),
-                bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
-                    true
-                } else {
-                    false
-                },  
-                bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
-                    true
-                } else {
-                    false
-                },
-                train: record[10].to_string(),
-                linestring: record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
-                .filter_map(|coord| {
-                    let mut parts = coord.split_whitespace();
-                    let lon_str = parts.next().unwrap();
-                    let lat_str = parts.next().unwrap();
-                    let lon: f64 = lon_str.parse().ok().unwrap();
-                    let lat: f64 = lat_str.parse().ok().unwrap();
-                    Some((lon, lat))
-                })
-                .collect()
-            };
-            graph.add_edge_obj(edge);
+        for handle in handles {
+            handle.join().unwrap();
         }
+
         let nodes = File::open(node_file_path).unwrap();
         let mut rdr = ReaderBuilder::new().from_reader(nodes);
         for record in rdr.records() {
