@@ -180,6 +180,104 @@ impl Graph {
         return graph.lock().unwrap().to_owned();
     }
 
+    fn from_csv_par2(edge_file_path: &str, node_file_path: &str) -> Self {
+        let mut graph = Self {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+        };
+        /*let file = File::open(edge_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(file);
+        for result in rdr.deserialize::<Edge>() {
+            let edge: Edge = result.unwrap();
+            graph.add_edge_obj(edge);
+        }
+        let file = File::open(node_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(file);
+        for result in rdr.deserialize::<Node>() {
+            let node: Node = result.unwrap();
+            graph.add_node_obj(node);
+        }*/
+        let edges = File::open(edge_file_path).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(edges);
+        let handles: Vec<_> = rdr.records().filter_map(|record| {
+            match record {
+                Ok(record) => Some(thread::spawn({
+                    move || {
+                        Edge {
+                            id: record[0].to_string(),
+                            osm_id: record[1].parse().unwrap(),
+                            source: record[2].parse().unwrap(),
+                            target: record[3].parse().unwrap(),
+                            length: record[4].parse().unwrap(),
+                            foot: if record[5].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },            
+                            car_forward: record[6].to_string(),
+                            car_backward: record[7].to_string(),
+                            bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },  
+                            bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },
+                            train: record[10].to_string(),
+                            linestring: record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
+                            .filter_map(|coord| {
+                                let mut parts = coord.split_whitespace();
+                                let lon_str = parts.next().unwrap();
+                                let lat_str = parts.next().unwrap();
+                                let lon: f64 = lon_str.parse().ok().unwrap();
+                                let lat: f64 = lat_str.parse().ok().unwrap();
+                                Some((lon, lat))
+                            })
+                            .collect()
+                        }
+                    }
+                })),
+                Err(err) => {
+                    eprintln!("Error reading record: {}", err);
+                    None
+                }
+            }
+        }).collect();
+
+        for handle in handles {
+            graph.add_edge_obj(handle.join().unwrap());
+        }
+
+        let nodes = File::open(node_file_path).expect("Failed to open file");
+        let mut rdr = ReaderBuilder::new().from_reader(nodes);
+
+        let handles: Vec<_> = rdr.records().filter_map(|record| {
+            match record {
+                Ok(record) => Some(thread::spawn({
+                    move || {
+                        Node {
+                            id: record[0].parse().unwrap(),
+                            lon: record[1].parse().unwrap(),
+                            lat: record[2].parse().unwrap()
+                        }
+                    }
+                })),
+                Err(err) => {
+                    eprintln!("Error reading record: {}", err);
+                    None
+                }
+            }
+        }).collect();
+
+        for handle in handles {
+            graph.add_node_obj(handle.join().unwrap());
+        }
+        graph
+    }
+
     fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
         let mut graph = Self {
             nodes: Vec::new(),
@@ -272,5 +370,5 @@ impl Graph {
 }
 
 fn main() {
-    let mut graph = Graph::from_csv("edges.csv", "nodes.csv");
+    let mut graph = Graph::from_csv_par2("edges.csv", "nodes.csv");
 }
