@@ -76,10 +76,10 @@ impl Graph {
     }
 
     fn from_csv_par(edge_file_path: &str, node_file_path: &str) -> Self {
-        let mut graph = Self {
+        let mut graph = Arc::new(Mutex::new(Self {
             nodes: Vec::new(),
             edges: Vec::new(),
-        };
+        }));
         /*let file = File::open(edge_file_path).unwrap();
         let mut rdr = ReaderBuilder::new().from_reader(file);
         for result in rdr.deserialize::<Edge>() {
@@ -94,11 +94,10 @@ impl Graph {
         }*/
         let edges = File::open(edge_file_path).unwrap();
         let mut rdr = ReaderBuilder::new().from_reader(edges);
-        let shared_graph = Arc::new(Mutex::new(graph.clone()));
         let handles: Vec<_> = rdr.records().filter_map(|record| {
             match record {
                 Ok(record) => Some(thread::spawn({
-                    let shared_graph_clone = Arc::clone(&shared_graph);
+                    let shared_graph_clone = Arc::clone(&graph);
                     move || {
                         let edge = Edge {
                             id: record[0].to_string(),
@@ -156,7 +155,7 @@ impl Graph {
         let handles: Vec<_> = rdr.records().filter_map(|record| {
             match record {
                 Ok(record) => Some(thread::spawn({
-                    let shared_graph_clone = Arc::clone(&shared_graph);
+                    let shared_graph_clone = Arc::clone(&graph);
                     move || {
                         let node = Node {
                             id: record[0].parse().unwrap(),
@@ -178,7 +177,7 @@ impl Graph {
             handle.join().unwrap();
         }
         println!("{:?}", graph);
-        graph
+        return graph.lock().unwrap().to_owned();
     }
 
     fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
@@ -273,5 +272,5 @@ impl Graph {
 }
 
 fn main() {
-    let mut graph = Graph::from_csv_par("edges.csv", "nodes.csv");
+    let mut graph = Graph::from_csv("edges.csv", "nodes.csv");
 }
