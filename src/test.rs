@@ -6,7 +6,6 @@ use std::thread;
 use std::time::Instant;
 
 use csv::{ReaderBuilder, StringRecord};
-use osmgraphing::configs::writing::network::graph;
 
 const MAX: f64 = f64::MAX;
 
@@ -298,19 +297,8 @@ impl Graph {
         }*/
         let edges = File::open(edge_file_path).unwrap();
         let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(edges).records().collect::<Result<_, _>>().unwrap();
-        // At this point, rdr is still in scope, so records can be collected before it's dropped.
         let records_per_part = records.len() / threads as usize;
         let mut split_records: Vec<_> = Vec::new();
-
-        for i in 0..threads {
-            let start_idx = (i * records_per_part as u32) as usize;
-            let end_idx = ((i + 1) * records_per_part as u32) as usize;
-            if end_idx <= records.len() {
-                split_records.push(records[start_idx..end_idx].to_vec());
-            } else {
-                split_records.push(records[start_idx..records.len()].to_vec());
-            }
-        }
 
         for i in 0..threads {
             let start_idx = (i * records_per_part as u32) as usize;
@@ -411,6 +399,125 @@ impl Graph {
         graph
     }
 
+    fn from_csv_par4(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
+        let mut graph = Arc::new(Mutex::new(Self {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+        }));
+        let edges = File::open(edge_file_path).unwrap();
+        let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(edges).records().collect::<Result<_, _>>().unwrap();
+        let records_per_part = records.len() / threads as usize;
+        let mut split_records: Vec<_> = Vec::new();
+
+        for i in 0..threads {
+            let start_idx = (i * records_per_part as u32) as usize;
+            let end_idx = ((i + 1) * records_per_part as u32) as usize;
+            if end_idx <= records.len() {
+                split_records.push(records[start_idx..end_idx].to_vec());
+            } else {
+                split_records.push(records[start_idx..records.len()].to_vec());
+            }
+        }
+
+        let handles: Vec<_> = split_records.into_iter().filter_map(|chunk| Some({ 
+            thread::spawn({
+                let shared_graph_clone = Arc::clone(&graph);
+                move || {
+                    let mut edges: Vec<Edge> = Vec::new();
+                    for record in chunk {
+                        let edge = Edge {
+                            id: record[0].to_string(),
+                            osm_id: record[1].parse().unwrap(),
+                            source: record[2].parse().unwrap(),
+                            target: record[3].parse().unwrap(),
+                            length: record[4].parse().unwrap(),
+                            foot: if record[5].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },            
+                            car_forward: record[6].to_string(),
+                            car_backward: record[7].to_string(),
+                            bike_forward: if record[8].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },  
+                            bike_backward: if record[9].parse::<String>().unwrap() == "Allowed" {
+                                true
+                            } else {
+                                false
+                            },
+                            train: record[10].to_string(),
+                            linestring: record[11].to_string().trim_start_matches("LINESTRING(").trim_end_matches(')').split(", ")
+                            .filter_map(|coord| {
+                                let mut parts = coord.split_whitespace();
+                                let lon_str = parts.next().unwrap();
+                                let lat_str = parts.next().unwrap();
+                                let lon: f64 = lon_str.parse().ok().unwrap();
+                                let lat: f64 = lat_str.parse().ok().unwrap();
+                                Some((lon, lat))
+                            })
+                            .collect()
+                        };
+                        edges.push(edge);
+                    }
+                    let mut graph = shared_graph_clone.lock().unwrap();
+                    for edge in edges {
+                        graph.add_edge_obj(edge);
+                    }
+                }
+            })
+        })).collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let nodes = File::open(node_file_path).unwrap();
+        let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(nodes).records().collect::<Result<_, _>>().unwrap();
+        // At this point, rdr is still in scope, so records can be collected before it's dropped.
+        let records_per_part = records.len() / threads as usize;
+        let mut split_records: Vec<_> = Vec::new();
+
+        for i in 0..threads {
+            let start_idx = (i * records_per_part as u32) as usize;
+            let end_idx = ((i + 1) * records_per_part as u32) as usize;
+            if end_idx <= records.len() {
+                split_records.push(records[start_idx..end_idx].to_vec());
+            } else {
+                split_records.push(records[start_idx..records.len()].to_vec());
+            }
+        }
+
+        let handles: Vec<_> = split_records.into_iter().filter_map(|chunk| Some({ 
+            thread::spawn({
+                let shared_graph_clone = Arc::clone(&graph);
+                move || {
+                    let mut nodes: Vec<Node> = Vec::new();
+                    for record in chunk {
+                        let node = Node {
+                            id: record[0].parse().unwrap(),
+                            lon: record[1].parse().unwrap(),
+                            lat: record[2].parse().unwrap()
+                        };
+                        nodes.push(node);
+                    }
+                    let mut graph = shared_graph_clone.lock().unwrap();
+                    for node in nodes {
+                        graph.add_node_obj(node);
+                    }
+                }
+            })
+        })).collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        
+        return graph.lock().unwrap().to_owned();
+    }
+
     fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
         let mut graph = Self {
             nodes: Vec::new(),
@@ -507,6 +614,8 @@ fn main() {
     let graph = Graph::from_csv("edges.csv", "nodes.csv");
     eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     let start_time = Instant::now();
-    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 128);
+    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 16);
     eprintln!("from_csv_par3 took {:?}", start_time.elapsed().as_secs_f64());
+    let graph = Graph::from_csv_par4("edges.csv", "nodes.csv", 16);
+    eprintln!("from_csv_par4 took {:?}", start_time.elapsed().as_secs_f64());
 }
