@@ -321,7 +321,7 @@ impl Graph {
                 split_records.push(records[start_idx..records.len()].to_vec());
             }
         }
-        
+
         let edges: Vec<_> = split_records.into_iter().filter_map(|chunk| Some({ 
             thread::spawn(move || {
                 let mut edges: Vec<Edge> = Vec::new();
@@ -507,6 +507,6 @@ fn main() {
     let graph = Graph::from_csv("edges.csv", "nodes.csv");
     eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     let start_time = Instant::now();
-    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 16);
+    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 128);
     eprintln!("from_csv_par3 took {:?}", start_time.elapsed().as_secs_f64());
 }
