@@ -297,17 +297,31 @@ impl Graph {
             graph.add_node_obj(node);
         }*/
         let edges = File::open(edge_file_path).unwrap();
-        let mut rdr = ReaderBuilder::new().from_reader(edges);
-        let records: Vec<StringRecord> = rdr.records().collect::<Result<_, _>>().unwrap();
-        let records_per_part = (records.len() as f64 / threads as f64).ceil() as u32;
-        let mut split_records = Vec::new();
+        let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(edges).records().collect::<Result<_, _>>().unwrap();
+        // At this point, rdr is still in scope, so records can be collected before it's dropped.
+        let records_per_part = records.len() / threads as usize;
+        let mut split_records: Vec<_> = Vec::new();
 
         for i in 0..threads {
-            let start_idx = (i * records_per_part) as usize;
-            let end_idx = ((i + 1) * records_per_part) as usize;
-            let part = records[start_idx..end_idx].to_vec();
-            split_records.push(part);
+            let start_idx = (i * records_per_part as u32) as usize;
+            let end_idx = ((i + 1) * records_per_part as u32) as usize;
+            if end_idx <= records.len() {
+                split_records.push(records[start_idx..end_idx].to_vec());
+            } else {
+                split_records.push(records[start_idx..records.len()].to_vec());
+            }
         }
+
+        for i in 0..threads {
+            let start_idx = (i * records_per_part as u32) as usize;
+            let end_idx = ((i + 1) * records_per_part as u32) as usize;
+            if end_idx <= records.len() {
+                split_records.push(records[start_idx..end_idx].to_vec());
+            } else {
+                split_records.push(records[start_idx..records.len()].to_vec());
+            }
+        }
+        
         let edges: Vec<_> = split_records.into_iter().filter_map(|chunk| Some({ 
             thread::spawn(move || {
                 let mut edges: Vec<Edge> = Vec::new();
