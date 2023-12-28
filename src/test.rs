@@ -197,7 +197,7 @@ impl Graph {
     }
 
     fn from_csv_par4(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
-        let mut graph = Arc::new(Mutex::new(Self {
+        let graph = Arc::new(Mutex::new(Self {
             nodes: Vec::new(),
             edges: Vec::new(),
         }));
@@ -273,7 +273,6 @@ impl Graph {
 
         let nodes = File::open(node_file_path).unwrap();
         let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(nodes).records().collect::<Result<_, _>>().unwrap();
-        // At this point, rdr is still in scope, so records can be collected before it's dropped.
         let records_per_part = records.len() / threads as usize;
         let mut split_records: Vec<_> = Vec::new();
 
