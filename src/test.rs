@@ -360,16 +360,19 @@ impl Graph {
         }
 
         let nodes = File::open(node_file_path).unwrap();
-        let mut rdr = ReaderBuilder::new().from_reader(nodes);
-        let records: Vec<StringRecord> = rdr.records().collect::<Result<_, _>>().unwrap();
-        let records_per_part = (records.len() as f64 / threads as f64).ceil() as u32;
-        let mut split_records = Vec::new();
+        let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(nodes).records().collect::<Result<_, _>>().unwrap();
+        // At this point, rdr is still in scope, so records can be collected before it's dropped.
+        let records_per_part = records.len() / threads as usize;
+        let mut split_records: Vec<_> = Vec::new();
 
         for i in 0..threads {
-            let start_idx = (i * records_per_part) as usize;
-            let end_idx = ((i + 1) * records_per_part) as usize;
-            let part = records[start_idx..end_idx].to_vec();
-            split_records.push(part);
+            let start_idx = (i * records_per_part as u32) as usize;
+            let end_idx = ((i + 1) * records_per_part as u32) as usize;
+            if end_idx <= records.len() {
+                split_records.push(records[start_idx..end_idx].to_vec());
+            } else {
+                split_records.push(records[start_idx..records.len()].to_vec());
+            }
         }
 
         let nodes: Vec<_> = split_records.into_iter().filter_map(|chunk| Some({ 
@@ -488,8 +491,8 @@ impl Graph {
 fn main() {
     let start_time = Instant::now();
     let graph = Graph::from_csv("edges.csv", "nodes.csv");
-    eprintln!("from_csv took {:?}", start_time.elapsed().as_secs());
+    eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     let start_time = Instant::now();
     let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 16);
-    eprintln!("from_csv_par3 took {:?}", start_time.elapsed().as_secs());
+    eprintln!("from_csv_par3 took {:?}", start_time.elapsed().as_secs_f64());
 }
