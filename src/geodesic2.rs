@@ -1,5 +1,4 @@
 use core::fmt;
-use approx::assert_relative_eq;
 // using geographiclib_rs because geographiclib doesnt provide the m12 and M12 required by Karney's improvements to BML
 use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
 use std::time::SystemTime;
@@ -9,7 +8,6 @@ use std::time::SystemTime;
  * https://sourceforge.net/p/geographiclib/discussion/1026621/thread/21aaff9f/?page=2&limit=25#766f
  */
 
-const DEBUG: bool = true;
 // value of semi major axis in WGS84 according to library source code since
 // geod.a is a private member
 const R: f64 = 6378137.0;
@@ -51,7 +49,7 @@ fn dd_to_dms(degs: f64) -> DMS {
     }
 }
 
-fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> Intercept {
+fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64), debug: bool) -> Intercept {
     let geod = Geodesic::wgs84();
     let mut iter_num = 0;
     let mut s_ax: f64;
@@ -75,7 +73,7 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         }
         
         let (p_a2_lat2, p_a2_lon2) = geod.direct(p_a.0, p_a.1, azi1_ab, s_ax);
-        if DEBUG {
+        if debug {
             eprintln!("{}, {}, {}, {:.4}", iter_num + 1, dd_to_dms(p_a2_lat2), dd_to_dms(p_a2_lon2), s_ax)
         }
         if s_ax.abs() < 1e-2 {
@@ -83,13 +81,13 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> I
         }
         p_a = (p_a2_lat2, p_a2_lon2);
         iter_num += 1;
-    }
+   }
 }
 
 fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
     println!("a: ({}, {})     b: ({}, {})     p: ({}, {})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
     let start = SystemTime::now(); //time right before geodesic calculation
-    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
     let end = SystemTime::now(); //time right after, next line finds difference
     let duration = end.duration_since(start).expect("Clock may have gone backwards");
     println!("Result: ({}, {}, {:.8} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
@@ -97,39 +95,51 @@ fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
 
 //the closest point on the line from distance 
 fn closest_point_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
-    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    result.lat, result.lon;
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p, false);
+    (result.lat, result.lon)
 }
 
 //shortest distance to that line from that point
-fn shortest_distance_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64) {
-    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
-    result.dist;
+fn shortest_distance_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> f64 {
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p, false);
+    result.dist
 }
 
 //the distance of line segments if the line was cut at where point is --> calculate distance from endpoint A to intercept, then distance from intercept to endpoint B
 fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
+	let geod = Geodesic::wgs84();
     let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
-    let seg_a = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1).s12;
-    let seg_b = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1).s12;
-    seg_a, seg_b; 
+    let (seg_a, _, _, _, _, _, _) = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
+    let (seg_b, _, _, _, _, _, _) = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1);
+    (seg_a, seg_b)
+}
+
+fn segment_tester(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> bool {
+	let geod = Geodesic::wgs84();
+	let (mut line, _, _, _, _, _, _) = geod.inverse(p_a.0, p_a.1, p_b.0, p_b.1);
+	line = (line*1e8).floor()*1e-8;
+	let seg = geodesic_segments(p_a, p_b, p_p);
+	let seg_sum: f64 = ((seg.0+seg.1)*1e8).floor()*1e-8;
+	println!("line: {}, segsum: {}", line, seg_sum);
+	line == seg_sum
 }
 
 //heading of px which is given as azi1 from the call to inverse on px where p is the initial point and x is the intercept
-fn heading(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64) {
+fn heading(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> f64 {
+	let geod = Geodesic::wgs84();
     let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
-    let dir = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1).azi1;
-    dir;
+    let (dir, _, _) = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
+    dir
 }
 
 fn main() {
     println!("24 km case:");
     println!("{:?}", test_point((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
-    println!("{}, {}, {}", shortest_distance_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), geodesic_segments((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), heading((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
-    println!("1000 km case:");
-    println!("{:?}", test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
-    println!("12200 km case:");
-    println!("{:?}", test_point((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
+    println!("testing functions: {}, {}, {}", shortest_distance_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), segment_tester((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), heading((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
+    //println!("1000 km case:");
+    //println!("{:?}", test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
+    //println!("12200 km case:");
+    //println!("{:?}", test_point((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
 }
 
 #[cfg(test)]
@@ -138,7 +148,7 @@ fn test_short() {
     let p_a = (52.0, 5.0);
     let p_b = (51.4, 6.0);
     let p_p = (52.0, 5.5);
-    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
     let lat = dd_to_dms(intercept.lat);
     let lon = dd_to_dms(intercept.lon);
     assert!(!lat.is_neg);
@@ -157,7 +167,7 @@ fn test_long() {
     let p_a = (42.0, 29.0);
     let p_b = (39.0, -77.0);
     let p_p = (64.0, -22.0);
-    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
     let lat = dd_to_dms(intercept.lat);
     let lon = dd_to_dms(intercept.lon);
     assert!(!lat.is_neg);
@@ -176,7 +186,7 @@ fn test_very_long() {
     let p_a = (42.0, 29.0);
     let p_b = (-35.0, -70.0);
     let p_p = (64.0, -22.0);
-    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    let intercept: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
     let lat = dd_to_dms(intercept.lat);
     let lon = dd_to_dms(intercept.lon);
     assert!(!lat.is_neg);
