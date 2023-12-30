@@ -95,9 +95,37 @@ fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
     println!("Result: ({}, {}, {:.8} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
 }
 
+//the closest point on the line from distance 
+fn closest_point_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    result.lat, result.lon;
+}
+
+//shortest distance to that line from that point
+fn shortest_distance_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64) {
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p);
+    result.dist;
+}
+
+//the distance of line segments if the line was cut at where point is --> calculate distance from endpoint A to intercept, then distance from intercept to endpoint B
+fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
+    let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
+    let seg_a = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1).s12;
+    let seg_b = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1).s12;
+    seg_a, seg_b; 
+}
+
+//heading of px which is given as azi1 from the call to inverse on px where p is the initial point and x is the intercept
+fn heading(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64) {
+    let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
+    let dir = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1).azi1;
+    dir;
+}
+
 fn main() {
     println!("24 km case:");
     println!("{:?}", test_point((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
+    println!("{}, {}, {}", shortest_distance_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), geodesic_segments((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), heading((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
     println!("1000 km case:");
     println!("{:?}", test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
     println!("12200 km case:");
