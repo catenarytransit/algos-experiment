@@ -307,6 +307,7 @@ dependencies = [
  "actix-web",
  "actix_block_ai_crawling",
  "approx 0.5.1",
+ "arguments",
  "chrono",
  "csv",
  "deadpool-postgres",
@@ -391,6 +392,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "arguments"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e63898dbe1952e16886475dedaeaebf28704434fb8fcf05436a0dbe01fc1118d"
+dependencies = [
+ "options",
 ]
 
 [[package]]
@@ -1765,6 +1775,12 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
+
+[[package]]
+name = "options"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "011a039a066746d788a814f9d597d09f2230a77677eddf9dfcbf37389e667e41"
 
 [[package]]
 name = "osmgraphing"
