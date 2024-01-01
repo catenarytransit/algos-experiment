@@ -17,6 +17,7 @@ struct Intercept {
     lat: f64,
     lon: f64,
     dist: f64,
+    dir: f64,
 }
 
 struct DMS {
@@ -49,6 +50,7 @@ fn dd_to_dms(degs: f64) -> DMS {
     }
 }
 
+//closest point, shortest distance, and heading are returned as part of Intercept struct
 fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64), debug: bool) -> Intercept {
     let geod = Geodesic::wgs84();
     let mut iter_num = 0;
@@ -77,22 +79,14 @@ fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64), debu
             eprintln!("{}, {}, {}, {:.4}", iter_num + 1, dd_to_dms(p_a2_lat2), dd_to_dms(p_a2_lon2), s_ax)
         }
         if s_ax.abs() < 1e-2 {
-            return Intercept{lat: p_a.0, lon: p_a.1, dist: s_ap};
+            return Intercept{lat: p_a.0, lon: p_a.1, dist: s_ap, dir: azi1_ab};
         }
         p_a = (p_a2_lat2, p_a2_lon2);
         iter_num += 1;
    }
 }
 
-fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
-    println!("a: ({}, {})     b: ({}, {})     p: ({}, {})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
-    let start = SystemTime::now(); //time right before geodesic calculation
-    let result: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
-    let end = SystemTime::now(); //time right after, next line finds difference
-    let duration = end.duration_since(start).expect("Clock may have gone backwards");
-    println!("Result: ({}, {}, {:.8} km) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, duration);
-}
-
+/*
 //the closest point on the line from distance 
 fn closest_point_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
     let result: Intercept = point_to_geodesic(p_a, p_b, p_p, false);
@@ -105,45 +99,45 @@ fn shortest_distance_geodesic(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64))
     result.dist
 }
 
-//the distance of line segments if the line was cut at where point is --> calculate distance from endpoint A to intercept, then distance from intercept to endpoint B
-fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> (f64, f64) {
-	let geod = Geodesic::wgs84();
-    let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
-    let seg_a = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
-    let seg_b = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1);
-    (seg_a, seg_b)
-}
-
-fn segment_tester(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> bool {
-	let geod = Geodesic::wgs84();
-	let mut line = geod.inverse(p_a.0, p_a.1, p_b.0, p_b.1);
-	line = (line*1e8).floor()*1e-8;
-	let seg = geodesic_segments(p_a, p_b, p_p);
-	let seg_sum: f64 = ((seg.0+seg.1)*1e8).floor()*1e-8;
-	println!("line: {}, segsum: {}", line, seg_sum);
-	line == seg_sum
-}
-
-//heading of px which is given as azi1 from the call to inverse on px where p is the initial point and x is the intercept
 fn heading(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> f64 {
 	let geod = Geodesic::wgs84();
     let intercept_point = closest_point_geodesic(p_a, p_b, p_p);
     let (dir, _, _) = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
     dir
 }
+*/
+
+//the distance of line segments if the line was cut at where point is --> calculate distance from endpoint A to intercept, then distance from intercept to endpoint B
+fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), intercept_point: (f64, f64)) -> (f64, f64) {
+	let geod = Geodesic::wgs84();
+    let seg_a = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
+    let seg_b = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1);
+    (seg_a, seg_b)
+}
+
+fn test_point(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) {
+    let geod = Geodesic::wgs84();
+	let line: f64 = geod.inverse(p_a.0, p_a.1, p_b.0, p_b.1);
+    println!("a: ({}, {})     b: ({}, {})     p: ({}, {})", p_a.0,p_a.1,p_b.0,p_b.1,p_p.0,p_p.1);
+    let start = SystemTime::now(); //time right before geodesic calculation
+    
+    let result: Intercept = point_to_geodesic(p_a, p_b, p_p, true);
+    let seg = geodesic_segments(p_a, p_b, (result.lat, result.lon));
+    
+    let end = SystemTime::now(); //time right after, next line finds difference
+    let duration = end.duration_since(start).expect("Clock may have gone backwards");
+    let seg_sum: f64 = seg.0+seg.1;
+    println!("Result: ({}, {}, {:.8} km, {}) at time {:?}", dd_to_dms(result.lat), dd_to_dms(result.lon), result.dist/1000.0, result.dir, duration);
+    println!("line: {}, segsum: {}, {}", line, seg_sum, line-seg_sum);
+}
 
 fn main() {
     println!("24 km case:");
-    println!("{:?}", test_point((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
-    let start = SystemTime::now(); //time right before geodesic calculation
-    println!("testing functions: {}, {}, {}", shortest_distance_geodesic((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), segment_tester((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)), heading((52.0, 5.0), (51.4, 6.0), (52.0, 5.5)));
-    let end = SystemTime::now(); //time right after, next line finds difference
-    let duration = end.duration_since(start).expect("Clock may have gone backwards");
-    println!("time: {}", duration);
-    //println!("1000 km case:");
-    //println!("{:?}", test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0)));
-    //println!("12200 km case:");
-    //println!("{:?}", test_point((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0)));
+    test_point((52.0, 5.0), (51.4, 6.0), (52.0, 5.5));
+    println!("1000 km case:");
+    test_point((42.0, 29.0), (39.0, -77.0), (64.0, -22.0));
+    println!("12200 km case:");
+    test_point((42.0, 29.0), (-35.0, -70.0), (64.0, -22.0));
 }
 
 #[cfg(test)]
