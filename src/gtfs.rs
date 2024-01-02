@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::{HashMap, BinaryHeap}, time::Instant, cmp::Ordering};
 use chrono::{DateTime, Local};
 use gtfs_structures::{self, DirectionType, DirectionType::Outbound};
 use serde::{Deserialize, Serialize};
@@ -10,8 +10,8 @@ struct GTFSGraph {
     old_services: Vec<String>,
     route_names: HashMap<String, String>,
     stop_names: HashMap<String, String>,
-    //<route id, <stop id, <service id, Vec<stop times>>>>
-    routes: HashMap<String, HashMap<String, HashMap<String, Vec<Vec<String>>>>>,
+    //<route id, <stop id, <service id, Vec<stop times,trip_id>>>>
+    routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
 }
 
 impl GTFSGraph {
@@ -30,8 +30,8 @@ impl GTFSGraph {
             for (stop, services) in stops {
                 // Iterate over the innermost HashMap
                 for (service, times) in services {
-                    let timetable = serde_json::to_string(&times.last().unwrap());
-                    let trips = serde_json::to_string(&times.first().unwrap());
+                    let timetable = serde_json::to_string(&times.into_iter().map(|(first, _)| first).collect::<Vec<_>>());
+                    let trips = serde_json::to_string(&times.into_iter().map(|(_, last)| last).collect::<Vec<_>>());
                     // Prepare the SQL statement with parameterized query
                     let service_id: String = service[0..service.len() - 2].to_string();
                     let direction: String = service[service.len() - 1..].to_string();
@@ -83,20 +83,17 @@ impl GTFSGraph {
             direction = 1.to_string();
         }
         if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&format!("{}-{}", service_id, direction)) {
-            let new_stop_times = vec![vec![trip_id], vec![arrival_string]];
+            let new_stop_times =vec![(arrival_string, trip_id)];
             self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(format!("{}-{}", service_id, direction), new_stop_times);
         } else {
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[0].push(trip_id);
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[1].push(arrival_string);
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap().push((arrival_string, trip_id));
         }
     }
     fn clean(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
                 for service in stop.1 {
-                    for stuff in service.1 {
-                        stuff.sort();
-                    }
+                    service.1.sort_by(|a, b| a.0.cmp(&b.0));
                 }
             }
         }
@@ -140,4 +137,5 @@ fn main() {
     let start_time = Instant::now();
     let graph = GTFSGraph::from_file("gtfs_rail.zip", "f-9q5-metro~losangeles~rail");
     eprintln!("from_file took {:?}", start_time.elapsed().as_secs_f64());
+    println!("{:#?}", graph);
 }
