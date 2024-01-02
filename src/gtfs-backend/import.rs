@@ -102,6 +102,7 @@ impl GTFSGraph {
         }
     }
 }
+
 #[tokio::main]
 async fn main() {
     let gfts_rail = gtfs_structures::Gtfs::new("gtfs_rail.zip").unwrap();

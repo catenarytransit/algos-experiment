@@ -1,4 +1,5 @@
 use core::fmt;
+use approx::assert_relative_eq;
 // using geographiclib_rs because geographiclib doesnt provide the m12 and M12 required by Karney's improvements to BML
 use geographiclib_rs::{Geodesic, InverseGeodesic, DirectGeodesic};
 use std::time::SystemTime;
@@ -145,6 +146,8 @@ fn main() {
 #[cfg(test)]
 #[test]
 fn test_short() {
+    use approx::assert_relative_eq;
+
     let p_a = (52.0, 5.0);
     let p_b = (51.4, 6.0);
     let p_p = (52.0, 5.5);

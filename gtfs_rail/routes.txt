@@ -1,0 +1,7 @@
+route_id,route_short_name,route_long_name,route_desc,route_type,route_color,route_text_color,route_url
+801,,Metro A Line,,0,0072BC,FFFFFF,https://www.metro.net/a-line/
+802,,Metro B Line,,1,EB131B,FFFFFF,https://www.metro.net/b-line/
+803,,Metro C Line,,0,58A738,FFFFFF,https://www.metro.net/c-line/
+804,,Metro E Line,,0,FDB913,000000,https://www.metro.net/e-line/
+807,,Metro K Line,,0,E56DB1,000000,https://www.metro.net/k-line/
+805,,Metro D Line,,1,A05DA5,FFFFFF,https://www.metro.net/d-line/
