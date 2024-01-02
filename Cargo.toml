@@ -45,10 +45,6 @@ name = "csv"
 path = "src/csv.rs"
 
 [[bin]]
-name = "geodesic"
-path = "src/geodesic.rs"
-
-[[bin]]
 name = "geodesic2"
 path = "src/geodesic2.rs"
 
