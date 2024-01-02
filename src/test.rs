@@ -204,7 +204,7 @@ impl Graph {
         let edges = File::open(edge_file_path).unwrap();
         let records: Vec<StringRecord> = ReaderBuilder::new().from_reader(edges).records().collect::<Result<_, _>>().unwrap();
         let records_per_part = records.len() / threads as usize;
-        let mut split_records: Vec<_> = Vec::new();
+        let mut split_records = Vec::new();
 
         for i in 0..threads {
             let start_idx = (i * records_per_part as u32) as usize;
