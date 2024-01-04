@@ -5,9 +5,8 @@ use gtfs_structures::DirectionType;
 use serde::{Serialize, Deserialize};
 use tokio_postgres::Client;
 
- 
 #[derive(Serialize, Deserialize, Debug)]
-struct GTFSGraph {
+pub struct GTFSGraph {
     onestop_id: String,
     old_services: Vec<String>,
     route_names: HashMap<String, String>,
@@ -17,7 +16,7 @@ struct GTFSGraph {
 }
 
 impl GTFSGraph {
-    fn new(onestop_id: &str) -> Self {
+    pub fn new(onestop_id: &str) -> Self {
         Self {
             onestop_id: onestop_id.to_string(),
             old_services: Vec::new(),
@@ -26,7 +25,7 @@ impl GTFSGraph {
             stop_names: HashMap::new(),
         }
     }
-    async fn to_sql(&mut self, client: &Client) {
+    pub async fn to_sql(&mut self, client: &Client) {
         for (route, stops) in &self.routes {
             // Iterate over the middle HashMap
             for (stop, services) in stops {
@@ -44,22 +43,22 @@ impl GTFSGraph {
             }
         }
     }
-    async fn from_sql(&mut self, client: &Client) {
+    pub async fn from_sql(&mut self, client: &Client) {
 
     }
     //adding connected edges
-    fn add_route(&mut self, id: String, name: String) {
+    pub fn add_route(&mut self, id: String, name: String) {
         let stops = HashMap::new();
         self.routes.insert(id.clone(), stops);
         self.route_names.insert(id, name);
     }
-    fn exclude_service(&mut self, id: String) {
+    pub fn exclude_service(&mut self, id: String) {
         self.old_services.push(id);
     }
-    fn add_stop(&mut self, id: String, name: String) {
+    pub fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
-    fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
+    pub fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
         if self.old_services.contains(&service_id) {
             return;
         }
@@ -92,7 +91,7 @@ impl GTFSGraph {
             self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[1].push(arrival_string);
         }
     }
-    fn clean(&mut self) {
+    pub fn clean(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
                 for service in stop.1 {
@@ -107,20 +106,20 @@ impl GTFSGraph {
 
 
 #[derive(Debug, Clone)]
-struct Graph {
+pub struct Graph {
     nodes: Vec<Node>,
     edges: Vec<Edge>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
-struct Node {
+pub struct Node {
     id: u64,
     lon: f64,
     lat: f64,
 }
 
 impl Node {
-    fn new(id: u64, lon: f64, lat: f64) -> Self {
+    pub fn new(id: u64, lon: f64, lat: f64) -> Self {
         Self {
             id: id,
             lon: lon,
@@ -130,7 +129,7 @@ impl Node {
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
-struct Edge {
+pub struct Edge {
     id: String,
     osm_id: String,
     source: String,
@@ -146,7 +145,7 @@ struct Edge {
 }
 
 impl Edge {
-    fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) -> Self {
+    pub fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) -> Self {
         Self {
             id: id,
             osm_id: osm_id,
@@ -165,14 +164,14 @@ impl Edge {
 }
 
 impl Graph {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
             edges: Vec::new(),
         }
     }
 
-    fn from_csv_par3(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
+    pub fn from_csv_par3(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
         let mut graph = Self {
             nodes: Vec::new(),
             edges: Vec::new(),
@@ -293,7 +292,7 @@ impl Graph {
         graph
     }
 
-    fn from_csv_par4(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
+    pub fn from_csv_par4(edge_file_path: &str, node_file_path: &str, threads: u32) -> Self {
         let graph = Arc::new(Mutex::new(Self {
             nodes: Vec::new(),
             edges: Vec::new(),
@@ -411,7 +410,7 @@ impl Graph {
         return graph.lock().unwrap().to_owned();
     }
 
-    fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
+    pub fn from_csv(edge_file_path: &str, node_file_path: &str) -> Self {
         let mut graph = Self {
             nodes: Vec::new(),
             edges: Vec::new(),
@@ -484,18 +483,18 @@ impl Graph {
         graph
     }
 
-    fn add_node(&mut self, id: u64, lon: f64, lat: f64) {
+    pub fn add_node(&mut self, id: u64, lon: f64, lat: f64) {
         self.nodes.push(Node::new(id, lon, lat));
     }
 
-    fn add_node_obj(&mut self, node: Node) {
+    pub fn add_node_obj(&mut self, node: Node) {
         self.nodes.push(node);
     }
-    fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) {
+    pub fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) {
         self.edges.push(Edge::new(id, osm_id, source, target, length, foot, car_forward, car_backward, bike_forward, bike_backward, train, linestring))
     }
 
-    fn add_edge_obj(&mut self, edge: Edge) {
+    pub fn add_edge_obj(&mut self, edge: Edge) {
         self.edges.push(edge);
     }
 

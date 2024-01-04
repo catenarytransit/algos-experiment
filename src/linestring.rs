@@ -1,54 +1,11 @@
 use std::error::Error;
 use csv::Reader;
+use osmgraphing::configs::writing::network::graph;
 use std::collections::HashMap;
 use std::time::SystemTime;
-use regex::Regex
+use regex::Regex;
 
-#[derive(Debug, serde::Deserialize)]
-struct Node {
-    id: i64,
-    lon: f64,
-    lat: f64,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct Edge {
-    id: String,
-    osm_id: String,
-    source: String,
-    target: String,
-    length: f64,
-    foot: bool,
-    car_forward: String,
-    car_backward: String,
-    bike_forward: bool,
-    bike_backward: bool,
-    train: String,
-    linestring: str,
-}
-
-let mut node_list: Vec<Node> = Vec::new();
-let mut edge_list: Vec<Edge> = Vec::new();
-
-fn parse_nodes() {
-    let mut read = Reader::from_path("../testnodes.csv")?;
-    let mut list = read.deserialize();
-    for item in list.records() {
-        if let Some(result) = list.next() {
-            node_list.insert.push(Node = result?);
-        }
-    }
-}
-
-fn parse_edges() {
-    let mut read = Reader::from_path("../testedges.csv")?;
-    let mut list = read.deserialize();
-    for item in list.records() {
-        if let Some(result) = list.next() {
-            edge_list.insert.push(Edge = result?);
-        }
-    }
-}
+mod graph;
 
 //extracts coordinates as tuples from linestring
 fn coords(linestring: str) -> Vec<(f64, f64)> {
@@ -120,8 +77,7 @@ fn main() {
     println!("start");
     let start = SystemTime::now();
 
-    parse_nodes();
-    parse_edges();
+    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", threads);
 
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {}", parsed);
