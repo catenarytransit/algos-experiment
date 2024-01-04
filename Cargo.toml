@@ -32,6 +32,7 @@ tokio-postgres = "*"
 tokio-pg-mapper = "*"
 tokio-pg-mapper-derive = "*"
 actix_block_ai_crawling = "0.2.8"
+hashmap = "0.0.1"
 
 [[bin]]
 name = "actix"
@@ -67,3 +68,7 @@ path = "src/gtfs-backend/import.rs"
 [[bin]]
 name = "parallel"
 path = "src/parallel.rs"
+
+[[bin]]
+name = "linestring"
+path = "src/linestring.rs"

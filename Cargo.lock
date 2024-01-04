@@ -316,6 +316,7 @@ dependencies = [
  "geographiclib-rs",
  "gtfs-rt",
  "gtfs-structures",
+ "hashmap",
  "osmgraphing",
  "pathfinding",
  "petgraph",
@@ -1234,6 +1235,12 @@ name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
+
+[[package]]
+name = "hashmap"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58f4c5bfe5d332cdefc57bd31471448f8b6cb0398542f4aecc2620e577e6fd54"
 
 [[package]]
 name = "heck"
