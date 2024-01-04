@@ -60,53 +60,61 @@ fn coords(linestring: str) -> Vec<(f64, f64)> {
     coords
 }
 
-//finds the corners to use for quadtree 
-fn quad_corners() -> (f64, f64, f64, f64) {
-    let start_lon: (f64) = coords(edge_list.get(0).linestring).get(0).1;
-    let start_lat: (f64) = coords(edge_list.get(0).linestring).get(0).1;
-    
-    let mut max_lon = start_lon;
-    let mut max_lat = start_lat;
-    let mut min_lon = start_lon;
-    let mut min_lat = start_lat
+let mut subsection: (f64, f64) = (None, None);
+//takes in a Node and returns the linestring closest to point
+fn get_linestring(Node) -> Vec<String> {
+    let mut all_coords: Vec<(f64, f64)>; 
     for edge in edge_list {
-        for instance in coords(edge.linestring) {
-            if instance.0 > max_lon {
-                max_lon = instance.0;
-            }
-            if instance.1 > max_lat {
-                max_lat = instance.1;
-            }
+        all_coords.extend(coords(edge.linestring));
+    }
+    let init_lon: (f64) = all_coords.get(0).0;
+    let init_lat: (f64) = all_coords.get(0).1;
+    let mut max_lon = init_lon;
+    let mut max_lat = init_lat;
+    let mut min_lon = init_lon;
+    let mut min_lat = init_lat
 
-            if instance.0 < min_lon {
-                min_lon = instance.0;
-            }
-            if instance.1 < min_lat {
-                min_lat = instance.1;
-            }
+    for instance in all_coords {
+        if instance.0 > max_lon {
+            max_lon = instance.0;
+        }
+        if instance.1 > max_lat {
+            max_lat = instance.1;
+        }
+
+        if instance.0 < min_lon {
+            min_lon = instance.0;
+        }
+        if instance.1 < min_lat {
+            min_lat = instance.1;
         }
     }
-    (max_lon, max_lat, min_lon, min_lat)
-}
-
-//takes in a Node and returns the linestring closest to point
-fn get_linestring(Node) -> str {
+    let mut mid_lon = max_lon - min_lon;
+    let mut mid_lat = max_lat - min_lat;
     
+    loop {
+        break;
+    }
+
+    let point = format!("\\({} {}\\)", subsection.0, subsection.1);
+    let search = Regex::new(&point).unwrap();
+    let mut matches = Vec::new();
+    for edge in edge_list {
+        for instance in search.find_iter(&edge.linestring) {
+            matches.push(capture.as_str().to_string());
+        }
+    }
+    matches
 }
 
 fn generate_match() -> HashMap<Node, str>{
     let mut map = HashMap::new();
-    for node in node_list {
-        map.insert(node, get_linestring(node));
-    }
+    //for node in node_list {
+    //    map.insert(node, get_linestring(node));
+    //}
+    map.insert(node_list.get(0), get_linestring(node_list.get(0)));
     map
 }   
-
-//finds subsection where point is located at in linestring
-fn get_subsection(Node, linestring: str) -> (f64, f64){
-    
-}
-
 
 fn main() {
     println!("start");
@@ -124,6 +132,6 @@ fn main() {
     println!("matched at t = {}", matched);
 
     for (point, linestring) in map {
-        println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, get_subsection(point, linestring));
+        println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, subsection);
     }
 }
