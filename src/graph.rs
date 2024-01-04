@@ -1,9 +1,11 @@
 use std::{fs::File, collections::HashMap, thread, sync::{Arc, Mutex}};
-
+use gtfs_structures::DirectionType::Outbound;
+use chrono::{DateTime, Local};
 use csv::{ReaderBuilder, StringRecord};
 use gtfs_structures::DirectionType;
 use serde::{Serialize, Deserialize};
 use tokio_postgres::Client;
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GTFSGraph {
@@ -11,8 +13,8 @@ pub struct GTFSGraph {
     old_services: Vec<String>,
     route_names: HashMap<String, String>,
     stop_names: HashMap<String, String>,
-    //<route id, <stop id, <service id, Vec<stop times>>>>
-    routes: HashMap<String, HashMap<String, HashMap<String, Vec<Vec<String>>>>>,
+    //<route id, <stop id, <service id, Vec<stop times,trip_id>>>>
+    routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
 }
 
 impl GTFSGraph {
@@ -25,14 +27,15 @@ impl GTFSGraph {
             stop_names: HashMap::new(),
         }
     }
+
     pub async fn to_sql(&mut self, client: &Client) {
         for (route, stops) in &self.routes {
             // Iterate over the middle HashMap
             for (stop, services) in stops {
                 // Iterate over the innermost HashMap
                 for (service, times) in services {
-                    let timetable = serde_json::to_string(&times.last().unwrap());
-                    let trips = serde_json::to_string(&times.first().unwrap());
+                    let timetable = serde_json::to_string(&times.into_iter().map(|(first, _)| first).collect::<Vec<_>>());
+                    let trips = serde_json::to_string(&times.into_iter().map(|(_, last)| last).collect::<Vec<_>>());
                     // Prepare the SQL statement with parameterized query
                     let service_id: String = service[0..service.len() - 2].to_string();
                     let direction: String = service[service.len() - 1..].to_string();
@@ -43,21 +46,25 @@ impl GTFSGraph {
             }
         }
     }
-    pub async fn from_sql(&mut self, client: &Client) {
+
+    async fn from_sql(&mut self, client: &Client) {
 
     }
+
     //adding connected edges
     pub fn add_route(&mut self, id: String, name: String) {
         let stops = HashMap::new();
         self.routes.insert(id.clone(), stops);
         self.route_names.insert(id, name);
     }
+
     pub fn exclude_service(&mut self, id: String) {
         self.old_services.push(id);
     }
     pub fn add_stop(&mut self, id: String, name: String) {
         self.stop_names.insert(id, name);
     }
+
     pub fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
         if self.old_services.contains(&service_id) {
             return;
@@ -84,25 +91,57 @@ impl GTFSGraph {
             direction = 1.to_string();
         }
         if !self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().contains_key(&format!("{}-{}", service_id, direction)) {
-            let new_stop_times = vec![vec![trip_id], vec![arrival_string]];
+            let new_stop_times =vec![(arrival_string, trip_id)];
             self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().insert(format!("{}-{}", service_id, direction), new_stop_times);
         } else {
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[0].push(trip_id);
-            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap()[1].push(arrival_string);
+            self.routes.get_mut(&id).unwrap().get_mut(&stop_id).unwrap().get_mut(&format!("{}-{}", service_id, direction)).unwrap().push((arrival_string, trip_id));
         }
     }
+
     pub fn clean(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
                 for service in stop.1 {
-                    for stuff in service.1 {
-                        stuff.sort();
-                    }
+                    service.1.sort_by(|a, b| a.0.cmp(&b.0));
                 }
             }
         }
     }
+
+    pub fn from_file(file: &str, onestop_id: &str) -> Self {
+        let gfts_rail = gtfs_structures::Gtfs::new(file).unwrap();
+        let mut graph: GTFSGraph = GTFSGraph::new(onestop_id); 
+        for route in gfts_rail.routes {
+            graph.add_route(route.1.id, route.1.long_name);
+        }
+        let local: DateTime<Local> = Local::now();
+        let formatted_date = local.format("%Y-%m-%d").to_string();
+        //let mut future_services: Vec<String> = Vec::new();
+        //let mut services: Vec<String> = Vec::new();
+        for service in gfts_rail.calendar {
+            if service.1.end_date.to_string() <= formatted_date {
+                /*if service.1.start_date.to_string() >= formatted_date {
+                    graph.exclude_service(service.1.id.clone());
+                } else {
+                    graph.exclude_service(service.1.id.clone());
+                }*/
+                graph.exclude_service(service.1.id.clone());
+            }
+            //eprintln!("{} {} {} {} {} ", formatted_date, formatted_date <= service.1.start_date.to_string(), service.1.start_date.to_string(), formatted_date <= service.1.end_date.to_string(), service.1.end_date.to_string());
+        }
+        for trip in gfts_rail.trips {
+            for stop_times in trip.1.stop_times {
+                if !graph.stop_names.contains_key(&stop_times.stop.id) {
+                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
+                }
+                graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound), trip.1.id.clone());
+            }
+        }
+        graph.clean();
+        graph
+    } 
 }
+
 
 
 #[derive(Debug, Clone)]
