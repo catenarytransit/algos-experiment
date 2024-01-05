@@ -79,6 +79,9 @@ fn main() {
 
     let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 32);
 
+    let sort_x = graph.nodes.clone().sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
+    let sort_y = graph.nodes.clone().sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
+    ;
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {:?}", parsed);
 

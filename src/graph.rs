@@ -9,12 +9,12 @@ use tokio_postgres::Client;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GTFSGraph {
-    onestop_id: String,
-    old_services: Vec<String>,
-    route_names: HashMap<String, String>,
-    stop_names: HashMap<String, String>,
-    //<route id, <stop id, <service id, Vec<stop times,trip_id>>>>
-    routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
+    pub onestop_id: String,
+    pub old_services: Vec<String>,
+    pub route_names: HashMap<String, String>,
+    pub stop_names: HashMap<String, String>,
+    //pub <route id, <stop id, <service id, Vec<stop times,trip_id>>>>
+    pub routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
 }
 
 impl GTFSGraph {
@@ -146,15 +146,15 @@ impl GTFSGraph {
 
 #[derive(Debug, Clone)]
 pub struct Graph {
-    nodes: Vec<Node>,
-    edges: Vec<Edge>,
+    pub nodes: Vec<Node>,
+    pub edges: Vec<Edge>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Node {
-    id: u64,
-    lon: f64,
-    lat: f64,
+    pub id: u64,
+    pub lon: f64,
+    pub lat: f64,
 }
 
 impl Node {
