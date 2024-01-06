@@ -11,8 +11,8 @@ fn main() {
     eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     let tree = vpsearch::Tree::new(&graph.nodes);
     let (index, _) = tree.find_nearest(&Node {
-        id: 2729462058,
-        lon: -119.0,
+        id: 729462058,
+        lon: -119.034311,
         lat: 33.4837658,
     });
     let start_time = Instant::now();
