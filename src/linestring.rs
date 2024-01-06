@@ -3,7 +3,6 @@ use graph::Node;
 use std::collections::HashMap;
 use std::time::SystemTime;
 use regex::Regex;
-
 use graph::Graph;
 
 //extracts coordinates as tuples from linestring
@@ -18,50 +17,9 @@ fn coords(linestring: &str) -> Vec<(f64, f64)> {
 
 //let mut subsection: (f64, f64) = (None, None);
 //takes in a Node and returns the linestring closest to point
-fn get_linestring(node: Node) -> Vec<String> {
-    //let mut all_coords: Vec<(f64, f64)>;
-    let mut all_coords: Vec<(f64, f64)> = vec![(31.0, 128.0)];
-    //for edge in edge_list {
-        //all_coords.extend(coords(edge.linestring));
-    //}
-    let init_lon: f64 = all_coords.get(0).unwrap().0;
-    let init_lat: f64 = all_coords.get(0).unwrap().1;
-    let mut max_lon = init_lon;
-    let mut max_lat = init_lat;
-    let mut min_lon = init_lon;
-    let mut min_lat = init_lat;
-
-    for instance in all_coords {
-        if instance.0 > max_lon {
-            max_lon = instance.0;
-        }
-        if instance.1 > max_lat {
-            max_lat = instance.1;
-        }
-
-        if instance.0 < min_lon {
-            min_lon = instance.0;
-        }
-        if instance.1 < min_lat {
-            min_lat = instance.1;
-        }
-    }
-    let mut mid_lon = max_lon - min_lon;
-    let mut mid_lat = max_lat - min_lat;
-    
-    loop {
-        break;
-    }
-
-    //let point = format!("\\({} {}\\)", subsection.0, subsection.1);
-    //let search = Regex::new(&point).unwrap();
-    let mut matches = Vec::new();
-    /*for edge in edge_list {
-        for instance in search.find_iter(&edge.linestring) {
-            matches.push(capture.as_str().to_string());
-        }
-    }*/
-    matches
+fn nearest_neighbor(node: Node) -> Vec<String> {
+    //geographic-lib nearest neighbor written only in c++ (using vpsearch and geodesic distance)
+    //however we have vincenty from geographiclib-rs and vpsearch in rust so we can try to recreate it
 }
 
 fn generate_match() -> HashMap<Node, String>{
@@ -69,7 +27,7 @@ fn generate_match() -> HashMap<Node, String>{
     //for node in node_list {
     //    map.insert(node, get_linestring(node));
     //}
-    //map.insert(node_list.get(0), get_linestring(node_list.get(0)));
+    //map.insert(node_list.get(0), nearest_neighbor(node_list.get(0)));
     map
 }   
 
@@ -87,6 +45,7 @@ fn main() {
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {:?}", parsed);
     let iter_x = sort_x.iter();
+    let iter_y = sort_y.iter();
     
     println!("aaa {}", 	iter_x.len());
     
@@ -95,15 +54,13 @@ fn main() {
     }
     
     
-    
-    
-    //for node in y_iter() {
-    //	println!("point {:?}", node);
-    //}
-    //let map = generate_match();
+    for node in iter_y {
+    	println!("point {:?}", node);
+    }
+    //let map = generate_match(); //main line of code that does things
 
-    //let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
-    //println!("matched at t = {:?}", matched);
+    let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
+    println!("matched at t = {:?}", matched);
 
     //for (point, linestring) in map {
         //println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, subsection);
