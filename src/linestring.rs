@@ -77,20 +77,29 @@ fn main() {
     println!("start");
     let start = SystemTime::now();
 
-    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 32);
+    let graph = Graph::from_csv_par3("../testedges.csv", "../testnodes.csv", 32);
 
     let sort_x = graph.nodes.clone().sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
     let sort_y = graph.nodes.clone().sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
-    ;
+    
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {:?}", parsed);
 
-    let map = generate_match();
-
-    let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
-    println!("matched at t = {:?}", matched);
-
-    for (point, linestring) in map {
-        //println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, subsection);
+    for node in sort_x {
+    	println!("point {:?}", node);
     }
+    
+    println!("then");
+    
+    for node in sort_y {
+    	println!("point {:?}", node);
+    }
+    //let map = generate_match();
+
+    //let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
+    //println!("matched at t = {:?}", matched);
+
+    //for (point, linestring) in map {
+        //println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, subsection);
+    //}
 }
