@@ -1,4 +1,5 @@
 use std::{fs::File, collections::HashMap, thread, sync::{Arc, Mutex}};
+use geographiclib_rs::{Geodesic, InverseGeodesic};
 use gtfs_structures::DirectionType::Outbound;
 use chrono::{DateTime, Local};
 use csv::{ReaderBuilder, StringRecord};
@@ -155,6 +156,16 @@ pub struct Node {
     pub id: u64,
     pub lon: f64,
     pub lat: f64,
+}
+
+impl vpsearch::MetricSpace for Node {
+    type UserData = ();
+    type Distance = f64;
+
+    fn distance(&self, other: &Self, _: &Self::UserData) -> Self::Distance {
+        let geod = Geodesic::wgs84();
+        return geod.inverse(self.lat, self.lon, other.lat, other.lon);
+    }
 }
 
 impl Node {
