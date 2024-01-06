@@ -70,9 +70,5 @@ name = "nn"
 path = "src/nn.rs"
 
 [[bin]]
-name = "parallel"
-path = "src/parallel.rs"
-
-[[bin]]
 name = "linestring"
 path = "src/linestring.rs"
