@@ -14,5 +14,6 @@ fn main() {
         lon: -117.2544123,
         lat: 34.1165449,
     });
-    println!("The nearest point is at ({}, {})", graph.nodes[index].lat, graph.nodes[index].lon);
+    let start_time = Instant::now();
+    println!("The nearest point, {}, is at ({}, {})\n Took {:?}", graph.nodes[index].id, graph.nodes[index].lat, graph.nodes[index].lon, start_time.elapsed().as_secs_f64());
 }
