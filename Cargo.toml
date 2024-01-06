@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 actix-web = "*"
 approx = "0.5.1"
+arguments = "*"
 chrono = "0.4.31"
 csv = "*"
 derive_more = "0.99.17"
@@ -17,7 +18,7 @@ serde = "*"
 serde_json = "*"
 pathfinding = "*"
 petgraph = "*"
-gtfs-structures = "0.39.0"
+gtfs-structures = "0.39.1"
 gtfs-rt = "*"
 osmgraphing = "1.1.1"
 actix-postgres = "*"
@@ -33,6 +34,7 @@ tokio-pg-mapper-derive = "*"
 actix_block_ai_crawling = "0.2.8"
 geo = "0.27.0"
 itertools = "0.12.0"
+hashmap = "0.0.1"
 
 [[bin]]
 name = "actix"
@@ -44,10 +46,6 @@ path = "src/algo.rs"
 [[bin]]
 name = "csv"
 path = "src/csv.rs"
-
-[[bin]]
-name = "geodesic"
-path = "src/geodesic.rs"
 
 [[bin]]
 name = "geodesic2"
@@ -76,3 +74,7 @@ path = "src/gtfs-backend/import.rs"
 [[bin]]
 name = "parallel"
 path = "src/parallel.rs"
+
+[[bin]]
+name = "linestring"
+path = "src/linestring.rs"
