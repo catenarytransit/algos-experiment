@@ -79,21 +79,27 @@ fn main() {
 
     let graph = Graph::from_csv_par3("../testedges.csv", "../testnodes.csv", 32);
 
-    let sort_x = graph.nodes.clone().sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
-    let sort_y = graph.nodes.clone().sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
+    let mut sort_x = graph.nodes.clone();
+    sort_x.sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
+    let mut sort_y = graph.nodes.clone();
+    sort_y.sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
     
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {:?}", parsed);
-
-    for node in sort_x {
+    let iter_x = sort_x.iter();
+    
+    println!("aaa {}", 	iter_x.len());
+    
+    for node in iter_x {
     	println!("point {:?}", node);
     }
     
-    println!("then");
     
-    for node in sort_y {
-    	println!("point {:?}", node);
-    }
+    
+    
+    //for node in y_iter() {
+    //	println!("point {:?}", node);
+    //}
     //let map = generate_match();
 
     //let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
