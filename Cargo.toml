@@ -36,6 +36,7 @@ vpsearch = "2.0.1"
 [[bin]]
 name = "actix"
 path = "src/gtfs-backend/actix.rs"
+
 [[bin]]
 name = "algo"
 path = "src/algo.rs"
@@ -63,10 +64,6 @@ path = "src/gtfs.rs"
 [[bin]]
 name = "import"
 path = "src/gtfs-backend/import.rs"
-
-[[bin]]
-name = "nn"
-path = "src/nn.rs"
 
 [[bin]]
 name = "linestring"
