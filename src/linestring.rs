@@ -76,7 +76,6 @@ fn main() {
     let start_time = Instant::now();
 
     let graph = Graph::from_csv("testedges.csv", "testnodes.csv");
-    //let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 32);
     
     /* old x and y sort
     let mut sort_x = graph.nodes.clone();

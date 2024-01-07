@@ -180,17 +180,17 @@ impl Node {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Edge {
-    id: String,
+    pub id: String,
     pub osm_id: String,
-    source: String,
-    target: String,
-    length: f64,
-    foot: bool,
-    car_forward: String,
-    car_backward: String,
-    bike_forward: bool,
-    bike_backward: bool,
-    train: String,
+    pub source: String,
+    pub target: String,
+    pub length: f64,
+    pub foot: bool,
+    pub car_forward: String,
+    pub car_backward: String,
+    pub bike_forward: bool,
+    pub bike_backward: bool,
+    pub train: String,
     pub linestring: Vec<(f64,f64)>,
 }
 
