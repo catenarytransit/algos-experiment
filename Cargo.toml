@@ -65,9 +65,5 @@ name = "import"
 path = "src/gtfs-backend/import.rs"
 
 [[bin]]
-name = "nn"
-path = "src/nn.rs"
-
-[[bin]]
 name = "linestring"
 path = "src/linestring.rs"
