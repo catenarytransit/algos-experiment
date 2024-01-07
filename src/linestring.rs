@@ -37,7 +37,7 @@ pub fn nodes_from_edges(graph: &Graph) -> Vec<Node> {
     for edge in edges {
         let edge_osm: u64 = edge.osm_id.parse::<u64>().unwrap();
         for point in edge.linestring {
-            coords.push(Node{id: edge_osm, lon: point.0, lat: point.1});
+            coords.push(Node{id: edge_osm, lon: point.lon, lat: point.lat});
         }
     }
     coords

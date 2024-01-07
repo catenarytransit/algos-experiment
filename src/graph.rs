@@ -191,11 +191,11 @@ pub struct Edge {
     pub bike_forward: bool,
     pub bike_backward: bool,
     pub train: String,
-    pub linestring: Vec<(f64,f64)>,
+    pub linestring: Vec<Node>,
 }
 
 impl Edge {
-    pub fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) -> Self {
+    pub fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<Node>) -> Self {
         Self {
             id: id,
             osm_id: osm_id,
@@ -288,7 +288,11 @@ impl Graph {
                             let lat_str = parts.next().unwrap();
                             let lon: f64 = lon_str.parse().ok().unwrap();
                             let lat: f64 = lat_str.parse().ok().unwrap();
-                            Some((lon, lat))
+                            Some(Node {
+                                id: record[0].to_string().parse().unwrap(),
+                                lon,
+                                lat,
+                            })
                         })
                         .collect()
                     };
@@ -399,7 +403,11 @@ impl Graph {
                                 let lat_str = parts.next().unwrap();
                                 let lon: f64 = lon_str.parse().ok().unwrap();
                                 let lat: f64 = lat_str.parse().ok().unwrap();
-                                Some((lon, lat))
+                                Some(Node {
+                                    id: record[0].to_string().parse().unwrap(),
+                                    lon,
+                                    lat,
+                                })
                             })
                             .collect()
                         };
@@ -513,7 +521,11 @@ impl Graph {
                     let lat_str = parts.next().unwrap();
                     let lon: f64 = lon_str.parse().ok().unwrap();
                     let lat: f64 = lat_str.parse().ok().unwrap();
-                    Some((lon, lat))
+                    Some(Node {
+                        id: record[0].to_string().parse().unwrap(),
+                        lon,
+                        lat,
+                    })
                 })
                 .collect()
             };
@@ -540,7 +552,7 @@ impl Graph {
     pub fn add_node_obj(&mut self, node: Node) {
         self.nodes.push(node);
     }
-    pub fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) {
+    pub fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<Node>) {
         self.edges.push(Edge::new(id, osm_id, source, target, length, foot, car_forward, car_backward, bike_forward, bike_backward, train, linestring))
     }
 
