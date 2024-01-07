@@ -180,7 +180,7 @@ impl Node {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Edge {
-    id: String,
+    pub id: String,
     osm_id: String,
     source: String,
     target: String,
