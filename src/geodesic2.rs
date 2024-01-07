@@ -14,14 +14,14 @@ use std::time::SystemTime;
 const R: f64 = 6378137.0;
  
 #[derive(Debug)]
-struct Intercept {
+pub struct Intercept {
     lat: f64,
     lon: f64,
     dist: f64,
     dir: f64,
 }
 
-struct DMS {
+pub struct DMS {
     is_neg: bool,
     deg: u8,
     min: u8,
@@ -38,7 +38,7 @@ impl fmt::Display for DMS {
     }
 }
 
-fn dd_to_dms(degs: f64) -> DMS {
+pub fn dd_to_dms(degs: f64) -> DMS {
     let decimal_deg = degs.abs();
     let decimal_min = (decimal_deg - decimal_deg.floor()) * 60.0;
     let decimal_sec = (decimal_min - decimal_min.floor()) * 60.0;
@@ -52,7 +52,7 @@ fn dd_to_dms(degs: f64) -> DMS {
 }
 
 //closest point, shortest distance, and heading are returned as part of Intercept struct
-fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64), debug: bool) -> Intercept {
+pub fn point_to_geodesic(mut p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64), debug: bool) -> Intercept {
     let geod = Geodesic::wgs84();
     let mut iter_num = 0;
     let mut s_ax: f64;
@@ -109,7 +109,7 @@ fn heading(p_a: (f64, f64), p_b: (f64, f64), p_p: (f64, f64)) -> f64 {
 */
 
 //the distance of line segments if the line was cut at where point is --> calculate distance from endpoint A to intercept, then distance from intercept to endpoint B
-fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), intercept_point: (f64, f64)) -> (f64, f64) {
+pub fn geodesic_segments(p_a: (f64, f64), p_b: (f64, f64), intercept_point: (f64, f64)) -> (f64, f64) {
 	let geod = Geodesic::wgs84();
     let seg_a = geod.inverse(p_a.0, p_a.1, intercept_point.0, intercept_point.1);
     let seg_b = geod.inverse(intercept_point.0, intercept_point.1, p_b.0, p_b.1);
