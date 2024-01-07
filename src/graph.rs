@@ -191,7 +191,7 @@ pub struct Edge {
     bike_forward: bool,
     bike_backward: bool,
     train: String,
-    linestring: Vec<(f64,f64)>,
+    pub linestring: Vec<(f64,f64)>,
 }
 
 impl Edge {
