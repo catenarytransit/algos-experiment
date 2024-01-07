@@ -151,7 +151,7 @@ pub struct Graph {
     pub edges: Vec<Edge>,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
 pub struct Node {
     pub id: u64,
     pub lon: f64,
@@ -181,7 +181,7 @@ impl Node {
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Edge {
     id: String,
-    osm_id: String,
+    pub osm_id: String,
     source: String,
     target: String,
     length: f64,
@@ -191,7 +191,7 @@ pub struct Edge {
     bike_forward: bool,
     bike_backward: bool,
     train: String,
-    linestring: Vec<(f64,f64)>,
+    pub linestring: Vec<(f64,f64)>,
 }
 
 impl Edge {

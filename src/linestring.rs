@@ -1,96 +1,113 @@
 mod graph;
 use graph::Node;
-use std::collections::HashMap;
-use std::time::SystemTime;
-use regex::Regex;
-
+use std::time::Instant;
 use graph::Graph;
+use csv::Reader;
+use core::fmt;
 
-//extracts coordinates as tuples from linestring
-fn coords(linestring: &str) -> Vec<(f64, f64)> {
-    let re = Regex::new(r"\((\d+) (\d+)\)").unwrap();
-    let coords: Vec<(f64, f64)> = re.captures_iter(&linestring).map(|caps| {
-        let (_, [lon, lat]) = caps.extract();
-        (lon.parse::<f64>().unwrap(), lat.parse::<f64>().unwrap())
-    }).collect();
+pub struct Mapped {
+    node: Node, 
+    edge_osm: u64, 
+    edge_lon: f64, 
+    edge_lat: f64,
+    linestrings: Vec<String>,
+}
+
+
+impl fmt::Display for Mapped {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "Point {:?} matches to {} at ({}, {}), which is part of {}", self.node, self.edge_osm, self.edge_lon, self.edge_lat, self.linestrings.join("")) 
+    }
+}
+
+
+pub fn nearest_neighbor(node: Node, graph: &Graph) -> (u64, f64, f64) {
+    let node_list: Vec<Node> = nodes_from_edges(graph);
+    let tree = vpsearch::Tree::new(&node_list);
+    let (index, _) = tree.find_nearest(&node);
+    //let start_time = Instant::now();
+    //println!("The nearest point, {}, is at ({}, {})\n Took {:?}ns", node_list[index].id, node_list[index].lat, node_list[index].lon, start_time.elapsed().as_nanos());
+    (node_list[index].id, node_list[index].lat, node_list[index].lon)
+}
+
+
+pub fn nodes_from_edges(graph: &Graph) -> Vec<Node> {
+    let edges = graph.edges.clone();
+    let mut coords: Vec<Node> = Vec::new();
+    for edge in edges {
+        let edge_osm: u64 = edge.osm_id.parse::<u64>().unwrap();
+        for point in edge.linestring {
+            coords.push(Node{id: edge_osm, lon: point.0, lat: point.1});
+        }
+    }
     coords
 }
 
-//let mut subsection: (f64, f64) = (None, None);
-//takes in a Node and returns the linestring closest to point
-fn get_linestring(node: Node) -> Vec<String> {
-    //let mut all_coords: Vec<(f64, f64)>;
-    let mut all_coords: Vec<(f64, f64)> = vec![(31.0, 128.0)];
-    //for edge in edge_list {
-        //all_coords.extend(coords(edge.linestring));
-    //}
-    let init_lon: f64 = all_coords.get(0).unwrap().0;
-    let init_lat: f64 = all_coords.get(0).unwrap().1;
-    let mut max_lon = init_lon;
-    let mut max_lat = init_lat;
-    let mut min_lon = init_lon;
-    let mut min_lat = init_lat;
 
-    for instance in all_coords {
-        if instance.0 > max_lon {
-            max_lon = instance.0;
-        }
-        if instance.1 > max_lat {
-            max_lat = instance.1;
-        }
-
-        if instance.0 < min_lon {
-            min_lon = instance.0;
-        }
-        if instance.1 < min_lat {
-            min_lat = instance.1;
+pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
+    let mut linestrings: Vec<String> = Vec::new();
+    let coord = format!("{} {}", lon, lat);
+    let mut rdr = Reader::from_path("testedges.csv").unwrap();
+    for row in rdr.records() {
+        let cell= row.unwrap();
+        let linestring: &str = &cell[11];
+        if linestring.contains(&coord) {
+            linestrings.push(linestring.to_string().clone());
         }
     }
-    let mut mid_lon = max_lon - min_lon;
-    let mut mid_lat = max_lat - min_lat;
-    
-    loop {
-        break;
-    }
-
-    //let point = format!("\\({} {}\\)", subsection.0, subsection.1);
-    //let search = Regex::new(&point).unwrap();
-    let mut matches = Vec::new();
-    /*for edge in edge_list {
-        for instance in search.find_iter(&edge.linestring) {
-            matches.push(capture.as_str().to_string());
-        }
-    }*/
-    matches
+    linestrings
 }
 
-fn generate_match() -> HashMap<Node, String>{
-    let mut map = HashMap::new();
-    //for node in node_list {
-    //    map.insert(node, get_linestring(node));
-    //}
-    //map.insert(node_list.get(0), get_linestring(node_list.get(0)));
+
+pub fn generate_match(graph: Graph) -> Vec<Mapped> {
+    let mut map: Vec<Mapped> = Vec::new();
+    let nodes = graph.nodes.clone();
+    for node in nodes {
+        let neighbor = nearest_neighbor(node, &graph);
+        let linestrings = get_linestrings(neighbor.1, neighbor.2);
+        map.push(Mapped{node, edge_osm: neighbor.0, edge_lon: neighbor.1, edge_lat: neighbor.2, linestrings});
+    }
     map
 }   
 
+
 fn main() {
     println!("start");
-    let start = SystemTime::now();
+    let start_time = Instant::now();
 
-    let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 32);
-
-    let sort_x = graph.nodes.clone().sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
-    let sort_y = graph.nodes.clone().sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
-    ;
+    let graph = Graph::from_csv("testedges.csv", "testnodes.csv");
+    //let graph = Graph::from_csv_par3("edges.csv", "nodes.csv", 32);
+    
+    /* old x and y sort
+    let mut sort_x = graph.nodes.clone();
+    sort_x.sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
+    let mut sort_y = graph.nodes.clone();
+    sort_y.sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
+    
     let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
     println!("parsed at t = {:?}", parsed);
 
-    let map = generate_match();
-
-    let matched = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
-    println!("matched at t = {:?}", matched);
-
-    for (point, linestring) in map {
-        //println!("point {:?} matches to linestring {:?} at geodesic {:?}", point, linestring, subsection);
+    let iter_x = sort_x.iter();
+    let iter_y = sort_y.iter();
+    
+    println!("aaa {}", 	iter_x.len());
+    
+    for node in iter_x {
+    	println!("point {:?}", node);
     }
+    
+    for node in iter_y {
+    	println!("point {:?}", node);
+    }
+    */
+   
+    let map = generate_match(graph);
+    //nearest_neighbor(Node{id: 729462058, lon: -119.034311, lat: 33.4837658});
+    println!("matched at t = {:?}", start_time.elapsed().as_nanos());
+    
+    for node_info in map {
+        println!("{}", node_info);
+    }
+    
+
 }
