@@ -4,14 +4,14 @@ use geo::{coord, Coord, LineString};
 use itertools::Itertools;
 // given two points (A, B) and a proportion P,
 // find the point X along the geodesic P of the length of the geodesic from A
-fn percent_geodesic(a: (f64, f64), b: (f64, f64), p: f64) -> Coord<f64> {
+pub fn percent_geodesic(a: (f64, f64), b: (f64, f64), p: f64) -> Coord<f64> {
     let geod = Geodesic::wgs84();
     let (s_ab, azi_a, _, _) = geod.inverse(a.0, a.1, b.0, b.1);
     let (x, y) = geod.direct(a.0, a.1, azi_a, p * s_ab);
     coord! {x: x, y: y,}
 }
 
-fn percent_linestring(l: LineString, p: f64) -> Coord<f64> {
+pub fn percent_linestring(l: LineString, p: f64) -> Coord<f64> {
     let geod = Geodesic::wgs84();
     let mut distances: Vec<f64> = Vec::new();
     for (a, b) in l.0.iter().tuple_windows() {
