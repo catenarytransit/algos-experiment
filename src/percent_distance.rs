@@ -40,3 +40,35 @@ fn main() {
     println!("12200 km case:");
     println!("{:?}", percent_geodesic((42.0, 29.0), (-35.0, -70.0), 0.75));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::percent_geodesic;
+    use approx::assert_relative_eq;
+    #[test]
+    fn test_percent_geodesic_from_both_ends_short() {
+        let a = (52.0, 5.0);
+        let b = (51.4, 6.0);
+        assert_relative_eq!(percent_geodesic(a, b, 0.5), percent_geodesic(b, a, 0.5), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.75), percent_geodesic(b, a, 0.25), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.125), percent_geodesic(b, a, 0.875), epsilon=1e-8);
+    }
+
+    #[test]
+    fn test_percent_geodesic_from_both_ends_long() {
+        let a = (42.0, 29.0);
+        let b = (39.0, -77.0);
+        assert_relative_eq!(percent_geodesic(a, b, 0.5), percent_geodesic(b, a, 0.5), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.75), percent_geodesic(b, a, 0.25), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.125), percent_geodesic(b, a, 0.875), epsilon=1e-8);
+    }
+
+    #[test]
+    fn test_percent_geodesic_from_both_ends_very_long() {
+        let a = (42.0, 29.0);
+        let b = (-35.0, -70.0);
+        assert_relative_eq!(percent_geodesic(a, b, 0.5), percent_geodesic(b, a, 0.5), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.75), percent_geodesic(b, a, 0.25), epsilon=1e-8);
+        assert_relative_eq!(percent_geodesic(a, b, 0.125), percent_geodesic(b, a, 0.875), epsilon=1e-8);
+    }
+}
