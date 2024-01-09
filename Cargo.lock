@@ -316,20 +316,19 @@ dependencies = [
  "geographiclib-rs",
  "gtfs-rt",
  "gtfs-structures",
- "hashmap",
  "osmgraphing",
  "pathfinding",
  "petgraph",
  "qstring",
  "rand 0.8.5",
  "rayon",
- "regex",
  "serde",
  "serde_json",
  "tokio",
  "tokio-pg-mapper",
  "tokio-pg-mapper-derive",
  "tokio-postgres",
+ "vpsearch",
 ]
 
 [[package]]
@@ -1235,12 +1234,6 @@ name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
-
-[[package]]
-name = "hashmap"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58f4c5bfe5d332cdefc57bd31471448f8b6cb0398542f4aecc2620e577e6fd54"
 
 [[package]]
 name = "heck"
@@ -2959,6 +2952,15 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vpsearch"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98657e55d93988f2a6780e2548ef4fde753c90b0ac1f91149e30eef68abf4260"
+dependencies = [
+ "num-traits",
+]
 
 [[package]]
 name = "want"
