@@ -43,8 +43,10 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::percent_geodesic;
+    use super::{percent_geodesic, percent_linestring};
     use approx::assert_relative_eq;
+    use gtfs_structures::{GtfsReader, Shape};
+    use geo::{coord, LineString};
     #[test]
     fn test_percent_geodesic_from_both_ends_short() {
         let a = (52.0, 5.0);
@@ -70,5 +72,33 @@ mod tests {
         assert_relative_eq!(percent_geodesic(a, b, 0.5), percent_geodesic(b, a, 0.5), epsilon=1e-8);
         assert_relative_eq!(percent_geodesic(a, b, 0.75), percent_geodesic(b, a, 0.25), epsilon=1e-8);
         assert_relative_eq!(percent_geodesic(a, b, 0.125), percent_geodesic(b, a, 0.875), epsilon=1e-8);
+    }
+
+    fn shape_to_line_string(s: &Vec<Shape>) -> LineString {
+        s.iter().map(|p| coord! {x: p.latitude, y: p.longitude}).collect()
+    }
+
+    fn shape_to_reversed_line_string(s: &Vec<Shape>) -> LineString {
+        s.iter().rev().map(|p| coord! {x: p.latitude, y: p.longitude}).collect()
+    }
+
+    #[test]
+    fn test_percent_linestring_from_both_ends() {
+        let gtfs = GtfsReader::default()
+            .read_stop_times(false)
+            .read_shapes(true)
+            .unkown_enum_as_default(false)
+            .read("gtfs_rail").unwrap();
+        for (_, shape) in gtfs.shapes {
+            assert_relative_eq!(percent_linestring(shape_to_line_string(&shape), 0.5), 
+                percent_linestring(shape_to_reversed_line_string(&shape), 0.5),
+                epsilon=1e-8);
+            assert_relative_eq!(percent_linestring(shape_to_line_string(&shape), 0.75), 
+                percent_linestring(shape_to_reversed_line_string(&shape), 0.25),
+                epsilon=1e-8);
+            assert_relative_eq!(percent_linestring(shape_to_line_string(&shape), 0.125), 
+                percent_linestring(shape_to_reversed_line_string(&shape), 0.875),
+                epsilon=1e-8);
+        }
     }
 }
