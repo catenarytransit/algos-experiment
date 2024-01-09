@@ -31,6 +31,9 @@ tokio-postgres = "*"
 tokio-pg-mapper = "*"
 tokio-pg-mapper-derive = "*"
 actix_block_ai_crawling = "0.2.8"
+geo = "0.27.0"
+itertools = "0.12.0"
+hashmap = "0.0.1"
 vpsearch = "2.0.1"
 
 [[bin]]
@@ -48,6 +51,10 @@ path = "src/csv.rs"
 [[bin]]
 name = "geodesic2"
 path = "src/geodesic2.rs"
+
+[[bin]]
+name = "percent_distance"
+path = "src/percent_distance.rs"
 
 [[bin]]
 name = "test"
