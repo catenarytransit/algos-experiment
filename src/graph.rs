@@ -560,5 +560,12 @@ impl Graph {
         self.edges.push(edge);
     }
 
-
+    pub fn get_edge_linestrings(self) -> Vec<Node> {
+        let mut linestrings: Vec<Vec<Node>> = Vec::new();
+        for edge in self.edges.into_iter() {
+            linestrings.push(edge.linestring);
+        }
+        linestrings.sort_by(|a, b| a[0].id.cmp(&b[0].id));
+        return linestrings.into_iter().flatten().collect();
+    }
 }
