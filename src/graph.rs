@@ -1,4 +1,4 @@
-use std::{fs::File, collections::HashMap, thread, sync::{Arc, Mutex}};
+use std::{fs::File, collections::{HashMap, HashSet}, thread, sync::{Arc, Mutex}};
 use geographiclib_rs::{Geodesic, InverseGeodesic};
 use gtfs_structures::DirectionType::Outbound;
 use chrono::{DateTime, Local};
@@ -14,7 +14,9 @@ pub struct GTFSGraph {
     pub old_services: Vec<String>,
     pub route_names: HashMap<String, String>,
     pub stop_names: HashMap<String, String>,
-    //pub <route id, <stop id, <service id, Vec<stop times,trip_id>>>>
+    //HashMap<(start_stop, end_stop), HashSet<edge_weights>>
+    pub edges: HashMap<(String, String), HashSet<u32>>,
+    //<route id, <stop id, <service id, Vec<stop time,trip_id>>>>
     pub routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
 }
 
@@ -26,6 +28,7 @@ impl GTFSGraph {
             routes: HashMap::new(),
             route_names: HashMap::new(),
             stop_names: HashMap::new(),
+            edges: HashMap::new(),
         }
     }
 
@@ -99,6 +102,20 @@ impl GTFSGraph {
         }
     }
 
+    pub fn add_edge(&mut self, stop1: String, arrival1: u32, stop2: String, arrival2: u32) {
+        let edge_weight = arrival1 - arrival2;
+        if self.edges.contains_key(&(stop1.clone(), stop2.clone())) {
+            if let Some(edge_set) = self.edges.get_mut(&(stop1, stop2)) {
+                edge_set.insert(edge_weight);
+            }
+        } else {
+            self.edges.insert((stop1.clone(), stop2.clone()), HashSet::new());
+            if let Some(edge_set) = self.edges.get_mut(&(stop1, stop2)) {
+                edge_set.insert(edge_weight);
+            }
+        }
+    }
+
     pub fn clean(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
@@ -130,17 +147,26 @@ impl GTFSGraph {
             }
             //eprintln!("{} {} {} {} {} ", formatted_date, formatted_date <= service.1.start_date.to_string(), service.1.start_date.to_string(), formatted_date <= service.1.end_date.to_string(), service.1.end_date.to_string());
         }
+
         for trip in gfts_rail.trips {
+            let mut last_stop: Option<String> = None;
+            let mut last_arrival: Option<u32> = None;
             for stop_times in trip.1.stop_times {
                 if !graph.stop_names.contains_key(&stop_times.stop.id) {
-                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
+                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone());
+                }
+                if last_stop.is_some() && last_arrival.is_some() && stop_times.arrival_time.is_some() {
+                    graph.add_edge(last_stop.clone().unwrap(), last_arrival.unwrap(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
+                    last_stop = Some(stop_times.stop.id.clone());
+                    last_arrival = stop_times.arrival_time;
                 }
                 graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound), trip.1.id.clone());
             }
         }
         graph.clean();
         graph
-    } 
+    }
+ 
 }
 
 
