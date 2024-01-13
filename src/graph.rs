@@ -103,16 +103,12 @@ impl GTFSGraph {
     }
 
     pub fn add_edge(&mut self, stop1: String, arrival1: u32, stop2: String, arrival2: u32) {
-        let edge_weight = arrival1 - arrival2;
-        if self.edges.contains_key(&(stop1.clone(), stop2.clone())) {
-            if let Some(edge_set) = self.edges.get_mut(&(stop1, stop2)) {
-                edge_set.insert(edge_weight);
-            }
+        let edge_weight = arrival2 - arrival1;
+        if self.edges.contains_key(&(stop1.clone(), stop2.clone())) && !self.edges.get(&(stop1.clone(), stop2.clone())).as_ref().unwrap().contains(&edge_weight) {
+            self.edges.get_mut(&(stop1.clone(), stop2.clone())).unwrap().insert(edge_weight);
         } else {
             self.edges.insert((stop1.clone(), stop2.clone()), HashSet::new());
-            if let Some(edge_set) = self.edges.get_mut(&(stop1, stop2)) {
-                edge_set.insert(edge_weight);
-            }
+            self.edges.get_mut(&(stop1, stop2)).unwrap().insert(edge_weight);
         }
     }
 
@@ -157,9 +153,9 @@ impl GTFSGraph {
                 }
                 if last_stop.is_some() && last_arrival.is_some() && stop_times.arrival_time.is_some() {
                     graph.add_edge(last_stop.clone().unwrap(), last_arrival.unwrap(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
-                    last_stop = Some(stop_times.stop.id.clone());
-                    last_arrival = stop_times.arrival_time;
                 }
+                last_stop = Some(stop_times.stop.id.clone());
+                last_arrival = stop_times.arrival_time;
                 graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound), trip.1.id.clone());
             }
         }
