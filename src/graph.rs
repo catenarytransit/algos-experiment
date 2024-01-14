@@ -6,6 +6,7 @@ use csv::{ReaderBuilder, StringRecord};
 use gtfs_structures::DirectionType;
 use serde::{Serialize, Deserialize};
 use tokio_postgres::Client;
+use vpsearch::{MetricSpace, BestCandidate};
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -13,11 +14,76 @@ pub struct GTFSGraph {
     pub onestop_id: String,
     pub old_services: Vec<String>,
     pub route_names: HashMap<String, String>,
+    //in the future add child stops
+    pub stops: Vec<GTFSNode>,
     pub stop_names: HashMap<String, String>,
     //HashMap<(start_stop, end_stop), HashSet<edge_weights>>
     pub edges: HashMap<(String, String), HashSet<u32>>,
     //<route id, <stop id, <service id, Vec<stop time,trip_id>>>>
     pub routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GTFSNode {
+    pub id: String,
+    pub lon: f64,
+    pub lat: f64,
+}
+
+impl vpsearch::MetricSpace for GTFSNode {
+    type UserData = ();
+    type Distance = f64;
+
+    fn distance(&self, other: &Self, _: &Self::UserData) -> Self::Distance {
+        let geod = Geodesic::wgs84();
+        return geod.inverse(self.lat, self.lon, other.lat, other.lon);
+    }
+}
+
+
+struct RadiusBasedNeighborhood<Item: MetricSpace<Impl>, Impl> {
+    max_distance: Item::Distance,
+    ids: HashSet<usize>,
+}
+
+impl<Item: MetricSpace<Impl>, Impl> RadiusBasedNeighborhood<Item, Impl> {
+    /// Helper function for creating the RadiusBasedNeighborhood struct.
+    /// Here `max_distance` is an exclusive upper bound to the euclidean distance.
+    fn new(max_distance: Item::Distance) -> Self {
+        RadiusBasedNeighborhood {
+            max_distance,
+            ids: HashSet::<usize>::new(),
+        }
+    }
+}
+
+/// Best candidate definitions that tracks of the index all the points
+/// within the radius of `distance` as specified in the `RadiusBasedNeighborhood`.
+impl<Item: MetricSpace<Impl> + Clone, Impl> BestCandidate<Item, Impl>
+    for RadiusBasedNeighborhood<Item, Impl>
+{
+    type Output = HashSet<usize>;
+
+    #[inline]
+    fn consider(
+        &mut self,
+        _: &Item,
+        distance: Item::Distance,
+        candidate_index: usize,
+        _: &Item::UserData,
+    ) {
+        if distance < self.max_distance {
+            self.ids.insert(candidate_index);
+        }
+    }
+
+    #[inline]
+    fn distance(&self) -> Item::Distance {
+        self.max_distance
+    }
+    fn result(self, _: &Item::UserData) -> Self::Output {
+        self.ids
+    }
 }
 
 impl GTFSGraph {
@@ -29,6 +95,7 @@ impl GTFSGraph {
             route_names: HashMap::new(),
             stop_names: HashMap::new(),
             edges: HashMap::new(),
+            stops: Vec::new(),
         }
     }
 
@@ -65,8 +132,15 @@ impl GTFSGraph {
     pub fn exclude_service(&mut self, id: String) {
         self.old_services.push(id);
     }
-    pub fn add_stop(&mut self, id: String, name: String) {
-        self.stop_names.insert(id, name);
+    pub fn add_stop(&mut self, id: String, name: String, lat: Option<f64>, lon: Option<f64>) {
+        self.stop_names.insert(id.clone(), name);
+        if lat.is_some() && lon.is_some() {
+            self.stops.push(GTFSNode {
+                id: id,
+                lon: lon.unwrap(),
+                lat: lat.unwrap(),
+            });
+        }
     }
 
     pub fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
@@ -149,7 +223,7 @@ impl GTFSGraph {
             let mut last_arrival: Option<u32> = None;
             for stop_times in trip.1.stop_times {
                 if !graph.stop_names.contains_key(&stop_times.stop.id) {
-                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone());
+                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone(), stop_times.stop.latitude, stop_times.stop.longitude);
                 }
                 if last_stop.is_some() && last_arrival.is_some() && stop_times.arrival_time.is_some() {
                     graph.add_edge(last_stop.clone().unwrap(), last_arrival.unwrap(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
