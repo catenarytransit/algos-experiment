@@ -1,4 +1,4 @@
-use std::{fs::File, collections::HashMap, thread, sync::{Arc, Mutex}};
+use std::{fs::File, collections::{HashMap, HashSet}, thread, sync::{Arc, Mutex}};
 use geographiclib_rs::{Geodesic, InverseGeodesic};
 use gtfs_structures::DirectionType::Outbound;
 use chrono::{DateTime, Local};
@@ -6,6 +6,7 @@ use csv::{ReaderBuilder, StringRecord};
 use gtfs_structures::DirectionType;
 use serde::{Serialize, Deserialize};
 use tokio_postgres::Client;
+use vpsearch::{MetricSpace, BestCandidate};
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -13,9 +14,76 @@ pub struct GTFSGraph {
     pub onestop_id: String,
     pub old_services: Vec<String>,
     pub route_names: HashMap<String, String>,
+    //in the future add child stops
+    pub stops: Vec<GTFSNode>,
     pub stop_names: HashMap<String, String>,
-    //pub <route id, <stop id, <service id, Vec<stop times,trip_id>>>>
+    //HashMap<(start_stop, end_stop), HashSet<edge_weights>>
+    pub edges: HashMap<(String, String), HashSet<u32>>,
+    //<route id, <stop id, <service id, Vec<stop time,trip_id>>>>
     pub routes: HashMap<String, HashMap<String, HashMap<String, Vec<(String, String)>>>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GTFSNode {
+    pub id: String,
+    pub lon: f64,
+    pub lat: f64,
+}
+
+impl vpsearch::MetricSpace for GTFSNode {
+    type UserData = ();
+    type Distance = f64;
+
+    fn distance(&self, other: &Self, _: &Self::UserData) -> Self::Distance {
+        let geod = Geodesic::wgs84();
+        return geod.inverse(self.lat, self.lon, other.lat, other.lon);
+    }
+}
+
+
+struct RadiusBasedNeighborhood<Item: MetricSpace<Impl>, Impl> {
+    max_distance: Item::Distance,
+    ids: HashSet<usize>,
+}
+
+impl<Item: MetricSpace<Impl>, Impl> RadiusBasedNeighborhood<Item, Impl> {
+    /// Helper function for creating the RadiusBasedNeighborhood struct.
+    /// Here `max_distance` is an exclusive upper bound to the euclidean distance.
+    fn new(max_distance: Item::Distance) -> Self {
+        RadiusBasedNeighborhood {
+            max_distance,
+            ids: HashSet::<usize>::new(),
+        }
+    }
+}
+
+/// Best candidate definitions that tracks of the index all the points
+/// within the radius of `distance` as specified in the `RadiusBasedNeighborhood`.
+impl<Item: MetricSpace<Impl> + Clone, Impl> BestCandidate<Item, Impl>
+    for RadiusBasedNeighborhood<Item, Impl>
+{
+    type Output = HashSet<usize>;
+
+    #[inline]
+    fn consider(
+        &mut self,
+        _: &Item,
+        distance: Item::Distance,
+        candidate_index: usize,
+        _: &Item::UserData,
+    ) {
+        if distance < self.max_distance {
+            self.ids.insert(candidate_index);
+        }
+    }
+
+    #[inline]
+    fn distance(&self) -> Item::Distance {
+        self.max_distance
+    }
+    fn result(self, _: &Item::UserData) -> Self::Output {
+        self.ids
+    }
 }
 
 impl GTFSGraph {
@@ -26,6 +94,8 @@ impl GTFSGraph {
             routes: HashMap::new(),
             route_names: HashMap::new(),
             stop_names: HashMap::new(),
+            edges: HashMap::new(),
+            stops: Vec::new(),
         }
     }
 
@@ -62,8 +132,15 @@ impl GTFSGraph {
     pub fn exclude_service(&mut self, id: String) {
         self.old_services.push(id);
     }
-    pub fn add_stop(&mut self, id: String, name: String) {
-        self.stop_names.insert(id, name);
+    pub fn add_stop(&mut self, id: String, name: String, lat: Option<f64>, lon: Option<f64>) {
+        self.stop_names.insert(id.clone(), name);
+        if lat.is_some() && lon.is_some() {
+            self.stops.push(GTFSNode {
+                id: id,
+                lon: lon.unwrap(),
+                lat: lat.unwrap(),
+            });
+        }
     }
 
     pub fn add_stoptime(&mut self, id: String, stop_id: String, service_id: String, arrival_time: u32, direction_id: DirectionType, trip_id: String) {//, start_date: &String, end_date: &String) {
@@ -99,6 +176,16 @@ impl GTFSGraph {
         }
     }
 
+    pub fn add_edge(&mut self, stop1: String, arrival1: u32, stop2: String, arrival2: u32) {
+        let edge_weight = arrival2 - arrival1;
+        if self.edges.contains_key(&(stop1.clone(), stop2.clone())) && !self.edges.get(&(stop1.clone(), stop2.clone())).as_ref().unwrap().contains(&edge_weight) {
+            self.edges.get_mut(&(stop1.clone(), stop2.clone())).unwrap().insert(edge_weight);
+        } else {
+            self.edges.insert((stop1.clone(), stop2.clone()), HashSet::new());
+            self.edges.get_mut(&(stop1, stop2)).unwrap().insert(edge_weight);
+        }
+    }
+
     pub fn clean(&mut self) {
         for route in &mut self.routes {
             for stop in route.1 {
@@ -130,17 +217,26 @@ impl GTFSGraph {
             }
             //eprintln!("{} {} {} {} {} ", formatted_date, formatted_date <= service.1.start_date.to_string(), service.1.start_date.to_string(), formatted_date <= service.1.end_date.to_string(), service.1.end_date.to_string());
         }
+
         for trip in gfts_rail.trips {
+            let mut last_stop: Option<String> = None;
+            let mut last_arrival: Option<u32> = None;
             for stop_times in trip.1.stop_times {
                 if !graph.stop_names.contains_key(&stop_times.stop.id) {
-                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone())
+                    graph.add_stop(stop_times.stop.id.clone(), stop_times.stop.name.clone(), stop_times.stop.latitude, stop_times.stop.longitude);
                 }
+                if last_stop.is_some() && last_arrival.is_some() && stop_times.arrival_time.is_some() {
+                    graph.add_edge(last_stop.clone().unwrap(), last_arrival.unwrap(), stop_times.stop.id.clone(), stop_times.arrival_time.unwrap());
+                }
+                last_stop = Some(stop_times.stop.id.clone());
+                last_arrival = stop_times.arrival_time;
                 graph.add_stoptime(trip.1.route_id.clone(), stop_times.stop.id.clone(), trip.1.service_id.clone(), stop_times.arrival_time.unwrap(), trip.1.direction_id.unwrap_or_else(|| Outbound), trip.1.id.clone());
             }
         }
         graph.clean();
         graph
-    } 
+    }
+ 
 }
 
 
@@ -180,22 +276,22 @@ impl Node {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Edge {
-    id: String,
+    pub id: String,
     pub osm_id: String,
-    source: String,
-    target: String,
-    length: f64,
-    foot: bool,
-    car_forward: String,
-    car_backward: String,
-    bike_forward: bool,
-    bike_backward: bool,
-    train: String,
-    pub linestring: Vec<(f64,f64)>,
+    pub source: String,
+    pub target: String,
+    pub length: f64,
+    pub foot: bool,
+    pub car_forward: String,
+    pub car_backward: String,
+    pub bike_forward: bool,
+    pub bike_backward: bool,
+    pub train: String,
+    pub linestring: Vec<Node>,
 }
 
 impl Edge {
-    pub fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) -> Self {
+    pub fn new(id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<Node>) -> Self {
         Self {
             id: id,
             osm_id: osm_id,
@@ -288,7 +384,11 @@ impl Graph {
                             let lat_str = parts.next().unwrap();
                             let lon: f64 = lon_str.parse().ok().unwrap();
                             let lat: f64 = lat_str.parse().ok().unwrap();
-                            Some((lon, lat))
+                            Some(Node {
+                                id: record[0].to_string().parse().unwrap(),
+                                lon,
+                                lat,
+                            })
                         })
                         .collect()
                     };
@@ -399,7 +499,11 @@ impl Graph {
                                 let lat_str = parts.next().unwrap();
                                 let lon: f64 = lon_str.parse().ok().unwrap();
                                 let lat: f64 = lat_str.parse().ok().unwrap();
-                                Some((lon, lat))
+                                Some(Node {
+                                    id: record[0].to_string().parse().unwrap(),
+                                    lon,
+                                    lat,
+                                })
                             })
                             .collect()
                         };
@@ -513,7 +617,11 @@ impl Graph {
                     let lat_str = parts.next().unwrap();
                     let lon: f64 = lon_str.parse().ok().unwrap();
                     let lat: f64 = lat_str.parse().ok().unwrap();
-                    Some((lon, lat))
+                    Some(Node {
+                        id: record[0].to_string().parse().unwrap(),
+                        lon,
+                        lat,
+                    })
                 })
                 .collect()
             };
@@ -540,7 +648,7 @@ impl Graph {
     pub fn add_node_obj(&mut self, node: Node) {
         self.nodes.push(node);
     }
-    pub fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<(f64, f64)>) {
+    pub fn add_edge(&mut self, id: String, osm_id: String, source: String, target: String, length: f64, foot: bool, car_forward: String, car_backward: String, bike_forward: bool, bike_backward: bool, train: String, linestring: Vec<Node>) {
         self.edges.push(Edge::new(id, osm_id, source, target, length, foot, car_forward, car_backward, bike_forward, bike_backward, train, linestring))
     }
 
@@ -548,5 +656,12 @@ impl Graph {
         self.edges.push(edge);
     }
 
-
+    pub fn get_edge_linestrings(self) -> Vec<Node> {
+        let mut linestrings: Vec<Vec<Node>> = Vec::new();
+        for edge in self.edges.into_iter() {
+            linestrings.push(edge.linestring);
+        }
+        linestrings.sort_by(|a, b| a[0].id.cmp(&b[0].id));
+        return linestrings.into_iter().flatten().collect();
+    }
 }
