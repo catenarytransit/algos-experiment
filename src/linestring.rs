@@ -20,6 +20,7 @@ impl fmt::Display for Mapped {
     }
 }
 
+
 pub fn nearest_neighbor(node: Node, graph: &Graph) -> (u64, f64, f64) {
     let node_list: Vec<Node> = graph.clone().get_edge_linestrings();
     let tree = vpsearch::Tree::new(&node_list);
@@ -28,6 +29,21 @@ pub fn nearest_neighbor(node: Node, graph: &Graph) -> (u64, f64, f64) {
     //println!("The nearest point, {}, is at ({}, {})\n Took {:?}ns", node_list[index].id, node_list[index].lat, node_list[index].lon, start_time.elapsed().as_nanos());
     (node_list[index].id, node_list[index].lat, node_list[index].lon)
 }
+
+pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
+    let mut linestrings: Vec<String> = Vec::new();
+    let coord = format!("{} {}", lon, lat);
+    let mut rdr = Reader::from_path("testedges.csv").unwrap();
+    for row in rdr.records() {
+        let cell= row.unwrap();
+        let linestring: &str = &cell[11];
+        if linestring.contains(&coord) {
+            linestrings.push(linestring.to_string().clone());
+        }
+    }
+    linestrings
+}
+
 
 pub fn generate_match(graph: Graph) -> Vec<Mapped> {
     let mut map: Vec<Mapped> = Vec::new();
