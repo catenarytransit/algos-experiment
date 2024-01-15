@@ -86,6 +86,7 @@ impl<Item: MetricSpace<Impl> + Clone, Impl> BestCandidate<Item, Impl>
     }
 }
 
+
 impl GTFSGraph {
     pub fn new(onestop_id: &str) -> Self {
         Self {
@@ -656,7 +657,7 @@ impl Graph {
         self.edges.push(edge);
     }
 
-    pub fn get_nodes_in_edge(self) -> Vec<Node> {
+    pub fn get_nodes_in_edges(self) -> Vec<Node> {
         let mut linestrings: Vec<Vec<Node>> = Vec::new();
         for edge in self.edges.into_iter() {
             linestrings.push(edge.linestring);
@@ -665,15 +666,15 @@ impl Graph {
         return linestrings.into_iter().flatten().collect();
     }
 
-    pub fn get_edges(self, index: usize) -> Edge {
-        self.edges[index].clone()
-    }
-
-    pub fn add_node_to_edges(self, given: Node, neighbor: Node) {
+    pub fn add_node_to_edges(self, given: Node, neighbor: Node) -> Vec<Edge> {
+        let mut edge_list: Vec<Edge> = Vec::new();
         for mut edge in self.edges.into_iter() {
             if edge.linestring.iter().any(|node| *node == neighbor) {
                 edge.linestring.push(given);
+                edge_list.push(edge);
             }
         }
+        edge_list
     }
+
 }

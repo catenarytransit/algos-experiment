@@ -1,8 +1,9 @@
 mod graph;
 use graph::Node;
+use graph::Edge;
 use std::time::Instant;
 use graph::Graph;
-use csv::Reader;
+//use csv::Reader;
 use core::fmt;
 
 pub struct Mapped {
@@ -10,26 +11,27 @@ pub struct Mapped {
     edge_osm: u64, 
     edge_lon: f64, 
     edge_lat: f64,
-    linestrings: Vec<String>,
+    linestrings: Vec<Node>,
 }
 
 
 impl fmt::Display for Mapped {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Point {:?} matches to {} at ({}, {}), which is part of {}", self.node, self.edge_osm, self.edge_lon, self.edge_lat, self.linestrings.join("")) 
+        write!(f, "Point {:?} matches to {} at ({}, {}), which is part of {:?}", self.node, self.edge_osm, self.edge_lon, self.edge_lat, self.linestrings) 
     }
 }
 
 
-pub fn nearest_neighbor(node: Node, graph: &Graph) -> (u64, f64, f64) {
-    let node_list: Vec<Node> = graph.clone().get_nodes_in_edge();
+pub fn nearest_neighbor(node: Node, graph: &Graph) -> Node {
+    let node_list: Vec<Node> = graph.clone().get_nodes_in_edges();
     let tree = vpsearch::Tree::new(&node_list);
     let (index, _) = tree.find_nearest(&node);
     //let start_time = Instant::now();
     //println!("The nearest point, {}, is at ({}, {})\n Took {:?}ns", node_list[index].id, node_list[index].lat, node_list[index].lon, start_time.elapsed().as_nanos());
-    (node_list[index].id, node_list[index].lat, node_list[index].lon)
+    node_list[index]
 }
 
+/*   realized this was really messy implimentation so now i repent
 pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
     let mut linestrings: Vec<String> = Vec::new();
     let coord = format!("{} {}", lon, lat);
@@ -43,15 +45,14 @@ pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
     }
     linestrings
 }
+*/
 
-
-pub fn generate_match(graph: Graph) -> Vec<Mapped> {
+pub fn generate_match(graph: Graph, node: Node) -> Vec<Mapped> {
     let mut map: Vec<Mapped> = Vec::new();
-    let nodes = graph.nodes.clone();
-    for node in nodes {
-        let neighbor = nearest_neighbor(node, &graph);
-        let linestrings = get_linestrings(neighbor.1, neighbor.2);
-        map.push(Mapped{node, edge_osm: neighbor.0, edge_lon: neighbor.1, edge_lat: neighbor.2, linestrings});
+    let neighbor = nearest_neighbor(node, &graph);
+    let edges: Vec<Edge> = graph.add_node_to_edges(node, neighbor);
+    for edge in edges {
+        map.push(Mapped{node, edge_osm: neighbor.id, edge_lon: neighbor.lon, edge_lat: neighbor.lat, linestrings: edge.linestring});
     }
     map
 }
@@ -63,36 +64,11 @@ fn main() {
 
     let graph = Graph::from_csv("testedges.csv", "testnodes.csv");
     
-    /* old x and y sort
-    let mut sort_x = graph.nodes.clone();
-    sort_x.sort_by(|a, b| a.lon.partial_cmp(&b.lon).unwrap());
-    let mut sort_y = graph.nodes.clone();
-    sort_y.sort_by(|a, b| a.lat.partial_cmp(&b.lat).unwrap());
+    let mynode = Node{id: 729462058, lon: -119.034311, lat: 33.4837658};
+    let map = generate_match(graph, mynode);
     
-    let parsed = SystemTime::now().duration_since(start).expect("Clock may have gone backwards");
-    println!("parsed at t = {:?}", parsed);
-
-    let iter_x = sort_x.iter();
-    let iter_y = sort_y.iter();
-    
-    println!("aaa {}", 	iter_x.len());
-    
-    for node in iter_x {
-    	println!("point {:?}", node);
-    }
-    
-    for node in iter_y {
-    	println!("point {:?}", node);
-    }
-    */
-   
-    let map = generate_match(graph);
-    //nearest_neighbor(Node{id: 729462058, lon: -119.034311, lat: 33.4837658});
     println!("matched at t = {:?}", start_time.elapsed().as_nanos());
     
-    for node_info in map {
-        println!("{}", node_info);
-    }
+    for node_info in map { println!("{}", node_info) };
     
-
 }
