@@ -247,7 +247,7 @@ pub struct Graph {
     pub edges: Vec<Edge>,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, serde::Deserialize, PartialEq)]
 pub struct Node {
     pub id: u64,
     pub lon: f64,
@@ -656,12 +656,24 @@ impl Graph {
         self.edges.push(edge);
     }
 
-    pub fn get_edge_linestrings(self) -> Vec<Node> {
+    pub fn get_nodes_in_edge(self) -> Vec<Node> {
         let mut linestrings: Vec<Vec<Node>> = Vec::new();
         for edge in self.edges.into_iter() {
             linestrings.push(edge.linestring);
         }
         linestrings.sort_by(|a, b| a[0].id.cmp(&b[0].id));
         return linestrings.into_iter().flatten().collect();
+    }
+
+    pub fn get_edges(self, index: usize) -> Edge {
+        self.edges[index].clone()
+    }
+
+    pub fn add_node_to_edges(self, given: Node, neighbor: Node) {
+        for mut edge in self.edges.into_iter() {
+            if edge.linestring.iter().any(|node| *node == neighbor) {
+                edge.linestring.push(given);
+            }
+        }
     }
 }

@@ -22,7 +22,7 @@ impl fmt::Display for Mapped {
 
 
 pub fn nearest_neighbor(node: Node, graph: &Graph) -> (u64, f64, f64) {
-    let node_list: Vec<Node> = graph.clone().get_edge_linestrings();
+    let node_list: Vec<Node> = graph.clone().get_nodes_in_edge();
     let tree = vpsearch::Tree::new(&node_list);
     let (index, _) = tree.find_nearest(&node);
     //let start_time = Instant::now();
@@ -54,7 +54,7 @@ pub fn generate_match(graph: Graph) -> Vec<Mapped> {
         map.push(Mapped{node, edge_osm: neighbor.0, edge_lon: neighbor.1, edge_lat: neighbor.2, linestrings});
     }
     map
-}   
+}
 
 
 fn main() {
