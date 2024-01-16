@@ -619,7 +619,7 @@ impl Graph {
                     let lon: f64 = lon_str.parse().ok().unwrap();
                     let lat: f64 = lat_str.parse().ok().unwrap();
                     Some(Node {
-                        id: record[0].to_string().parse().unwrap(),
+                        id: record[1].parse().unwrap(),
                         lon,
                         lat,
                     })
