@@ -668,24 +668,22 @@ impl Graph {
 
     pub fn add_node_to_edges(mut self, given: &Node, neighbor: &Node) -> Vec<Edge> {
         let mut edge_list: Vec<Edge> = Vec::new();
+        let mut index = 0;
         for mut edge in self.edges.into_iter() {
-            /* 
-            if edge.linestring.iter().any(|node| *node == neighbor) {
-                edge.linestring.push(given);
-                edge.linestring.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                edge_list.push(edge);
-
-            } */ 
-            let r = edge.linestring.binary_search_by_key(&given.id, |&Node{id, lon, lat} | id);
+            //if edge.linestring.iter().any(|node| *node == neighbor) {
+            let r = edge.linestring.binary_search_by_key(&neighbor.id, |&Node{id, lon, lat} | id);
+            print!("edge {}, {:?},", index, r);
             match r {
-                Ok(T) => { 
+                Ok(t) => { 
                     edge.linestring.push(*given);
                     edge.linestring.sort_by(|a, b| a.partial_cmp(b).unwrap());
                     edge_list.push(edge);
                 },
-                _ => panic!("node not found"),
-            } 
+                _ => println!(" not found"),
+            }
+            index = index + 1;
         }
+        println!("finished node match");
         edge_list
     }
 

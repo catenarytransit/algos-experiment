@@ -50,6 +50,7 @@ pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
 pub fn generate_match(graph: Graph, node: Node) -> Vec<Mapped> {
     let mut map: Vec<Mapped> = Vec::new();
     let neighbor = nearest_neighbor(node, &graph);
+    println!("neighbor: {:?}", neighbor);
     let edges: Vec<Edge> = graph.add_node_to_edges(&node, &neighbor);
     for edge in edges {
         map.push(Mapped{node, edge_osm: neighbor.id, edge_lon: neighbor.lon, edge_lat: neighbor.lat, linestrings: edge.linestring});
@@ -63,7 +64,7 @@ fn main() {
     let start_time = Instant::now();
 
     let graph = Graph::from_csv("testedges.csv", "testnodes.csv");
-    eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
+    //eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     
     let mynode = Node{id: 729462058, lon: -119.034311, lat: 33.4837658};
     let map = generate_match(graph, mynode);
