@@ -4,30 +4,14 @@ use graph::Edge;
 use std::time::Instant;
 use graph::Graph;
 //use csv::Reader;
-use core::fmt;
-
-pub struct Mapped {
-    node: Node, 
-    edge_osm: u64, 
-    edge_lon: f64, 
-    edge_lat: f64,
-    linestrings: Vec<Node>,
-}
-
-
-impl fmt::Display for Mapped {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Point {:?} matches to {} at ({}, {}), which is part of {:?}", self.node, self.edge_osm, self.edge_lon, self.edge_lat, self.linestrings) 
-    }
-}
 
 
 pub fn nearest_neighbor(node: Node, graph: &Graph) -> Node {
+    let start_time = Instant::now();
     let node_list: Vec<Node> = graph.clone().get_nodes_in_edges();
     let tree = vpsearch::Tree::new(&node_list);
     let (index, _) = tree.find_nearest(&node);
-    //let start_time = Instant::now();
-    //println!("The nearest point, {}, is at ({}, {})\n Took {:?}ns", node_list[index].id, node_list[index].lat, node_list[index].lon, start_time.elapsed().as_nanos());
+    println!("Nearest point: {:?},  took {:?}ns", node_list[index], start_time.elapsed().as_nanos());
     node_list[index]
 }
 
@@ -47,30 +31,21 @@ pub fn get_linestrings(lat: f64, lon: f64) -> Vec<String> {
 }
 */
 
-pub fn generate_match(graph: Graph, node: Node) -> Vec<Mapped> {
-    let mut map: Vec<Mapped> = Vec::new();
+pub fn generate_match(graph: Graph, node: Node) -> Vec<Edge> {
     let neighbor = nearest_neighbor(node, &graph);
-    println!("neighbor: {:?}", neighbor);
     let edges: Vec<Edge> = graph.add_node_to_edges(&node, &neighbor);
-    for edge in edges {
-        map.push(Mapped{node, edge_osm: neighbor.id, edge_lon: neighbor.lon, edge_lat: neighbor.lat, linestrings: edge.linestring});
-    }
-    map
+    edges
 }
 
-
 fn main() {
-    println!("start");
-    let start_time = Instant::now();
-
+    let mut start_time = Instant::now();
     let graph = Graph::from_csv("testedges.csv", "testnodes.csv");
-    //eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
+    eprintln!("from_csv took {:?}", start_time.elapsed().as_secs_f64());
     
     let mynode = Node{id: 729462058, lon: -119.034311, lat: 33.4837658};
     let map = generate_match(graph, mynode);
-    
     println!("matched at t = {:?}", start_time.elapsed().as_nanos());
     
-    for node_info in map { println!("{}", node_info) };
+    for node_info in map { println!("{:?}", node_info.linestring) };
     
 }

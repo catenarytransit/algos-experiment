@@ -671,13 +671,15 @@ impl Graph {
         let mut index = 0;
         for mut edge in self.edges.into_iter() {
             //if edge.linestring.iter().any(|node| *node == neighbor) {
-            let r = edge.linestring.binary_search_by_key(&neighbor.id, |&Node{id, lon, lat} | id);
-            print!("edge {}, {:?},", index, r);
-            match r {
-                Ok(t) => { 
+            let match_lon = edge.linestring.binary_search_by_key(&((neighbor.lon*1e8) as i64), |&Node{id, lon, lat}| ((lon*1e8) as i64));
+            let match_lat = edge.linestring.binary_search_by_key(&((neighbor.lat*1e8) as i64), |&Node{id, lon, lat}| ((lat*1e8) as i64));
+            print!("edge {}, {:?}, {:?},", index, match_lon, match_lat);
+            match (match_lon, match_lat) {
+                (Ok(s), Ok(t)) => { 
                     edge.linestring.push(*given);
                     edge.linestring.sort_by(|a, b| a.partial_cmp(b).unwrap());
                     edge_list.push(edge);
+                    println!("");
                 },
                 _ => println!(" not found"),
             }
